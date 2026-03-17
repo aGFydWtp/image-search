@@ -54,7 +54,7 @@
   - _Requirements: 1.5, 3.3_
 
 - [ ] 3. 画像前処理とTaxonomy管理の実装
-- [ ] 3.1 (P) ImagePreprocessorの実装
+- [x] 3.1 (P) ImagePreprocessorの実装
   - 画像バイナリの正規化処理（リサイズ、色空間統一）
   - サムネイル画像の生成（固定サイズ）
   - 画像メタデータ（width, height, aspect_ratio）の抽出
