@@ -83,7 +83,7 @@
   - _Contracts: TaxonomyMapper Service_
 
 - [ ] 4. インジェスションパイプラインの実装
-- [ ] 4.1 Firebase Storage連携とバッチ処理基盤
+- [x] 4.1 Firebase Storage連携とバッチ処理基盤
   - firebase-admin SDKを使用したFirebase Storage接続の初期化
   - 未処理画像の一覧取得機能（処理済み管理はQdrant内のartwork_id存在確認で判定）
   - 画像のダウンロード機能（バイナリ取得）
