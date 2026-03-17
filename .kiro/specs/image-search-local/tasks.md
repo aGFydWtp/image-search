@@ -101,7 +101,7 @@
   - _Contracts: IngestionService Service, Batch_
 
 - [ ] 5. クエリパーサーと検索サービスの実装
-- [ ] 5.1 QueryParserの実装
+- [x] 5.1 QueryParserの実装
   - 自然言語クエリからムード表現を抽出しsemantic_queryに設定する機能（ルールベース＋辞書）
   - 日本語色名（緑、金、青、赤等）を英語正規化形（green, gold, blue, red等）のcolor_tagsフィルタ値に変換
   - モチーフ表現（空、海、花、山等）をmotif_tagsフィルタ値に変換
