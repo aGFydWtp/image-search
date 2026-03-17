@@ -120,7 +120,7 @@
   - _Requirements: 3.4, 3.5_
   - _Contracts: Reranker Service_
 
-- [ ] 5.3 SearchServiceとAPIエンドポイントの実装
+- [x] 5.3 SearchServiceとAPIエンドポイントの実装
   - POST /api/artworks/search エンドポイントの実装（query: str, limit: int = 24）
   - クエリ分解→payloadフィルタ構築→テキスト埋め込み生成→Qdrant prefilter + vector search→リランキング→レスポンス構築の統合
   - フィルタ構築とテキスト埋め込み生成の並列実行
