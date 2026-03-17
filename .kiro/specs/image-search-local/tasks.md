@@ -8,7 +8,7 @@
   - 共有データモデル（ArtworkPayload, SearchRequest, SearchResponse等）をsharedモジュールに配置
   - _Requirements: 6.1, 6.2_
 
-- [ ] 1.2 Docker Compose定義とQdrantコンテナの構築
+- [x] 1.2 Docker Compose定義とQdrantコンテナの構築
   - docker-compose.ymlにQdrant（arm64ネイティブイメージ）、Ingestion Service、Search Serviceの各コンテナを定義
   - Qdrantデータ用のnamed volumeで永続化を設定
   - コンテナからホスト側MLサービスへの接続設定（host.docker.internal経由）
