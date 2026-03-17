@@ -72,7 +72,7 @@
   - _Requirements: 1.3_
   - _Contracts: ColorExtractor Service_
 
-- [ ] 3.3 (P) TaxonomyMapperの実装
+- [x] 3.3 (P) TaxonomyMapperの実装
   - モチーフ正規化辞書の定義と、VLM出力のモチーフ候補を正規化済みタグに変換する機能
   - ムード語彙セットの定義と、ムード候補を統制語彙にマッピングする機能
   - スタイル・サブジェクトタグの正規化ルール
