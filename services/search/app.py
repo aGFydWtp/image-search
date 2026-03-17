@@ -1,6 +1,7 @@
 """Search Service FastAPIアプリケーション。"""
 
 import logging
+from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -11,8 +12,6 @@ from shared.qdrant.repository import SearchFilters
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Image Search API", version="0.1.0")
-
 # 依存注入用のグローバル（lifespan or テストで設定）
 _query_parser = None
 _embedding_client = None
@@ -20,6 +19,64 @@ _qdrant_repo = None
 _reranker = None
 _ingestion_service = None
 _index_http_client = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """アプリ起動時に全依存を初期化する。"""
+    global _query_parser, _embedding_client, _qdrant_repo, _reranker
+    global _ingestion_service, _index_http_client
+
+    from qdrant_client import QdrantClient
+
+    from services.ingestion.color_extractor import ColorExtractor
+    from services.ingestion.image_preprocessor import ImagePreprocessor
+    from services.ingestion.pipeline import IngestionService
+    from services.search.query_parser import QueryParser
+    from services.search.reranker import Reranker
+    from shared.clients.embedding import EmbeddingClient
+    from shared.clients.vlm import VLMClient
+    from shared.config import Settings
+    from shared.qdrant.repository import QdrantRepository
+    from shared.taxonomy.mapper import TaxonomyMapper
+
+    settings = Settings()
+
+    # Qdrant
+    qdrant_client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
+    _qdrant_repo = QdrantRepository(client=qdrant_client, settings=settings)
+    _qdrant_repo.ensure_collection()
+
+    # Clients
+    _embedding_client = EmbeddingClient(settings=settings)
+    vlm_client = VLMClient(settings=settings)
+
+    # Search
+    _query_parser = QueryParser()
+    _reranker = Reranker()
+
+    # Ingestion (for /internal/artworks/index)
+    _ingestion_service = IngestionService(
+        vlm_client=vlm_client,
+        embedding_client=_embedding_client,
+        qdrant_repo=_qdrant_repo,
+        preprocessor=ImagePreprocessor(),
+        color_extractor=ColorExtractor(),
+        taxonomy_mapper=TaxonomyMapper(),
+    )
+    _index_http_client = httpx.Client(timeout=30.0)
+
+    logger.info("Search Service initialized")
+    yield
+
+    # Cleanup
+    _index_http_client.close()
+    _embedding_client.close()
+    vlm_client.close()
+    logger.info("Search Service shutdown")
+
+
+app = FastAPI(title="Image Search API", version="0.1.0", lifespan=lifespan)
 
 
 @app.get("/health")
