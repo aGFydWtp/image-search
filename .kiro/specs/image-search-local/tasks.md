@@ -62,7 +62,7 @@
   - _Requirements: 1.1_
   - _Contracts: ImagePreprocessor Service_
 
-- [ ] 3.2 (P) ColorExtractorの実装
+- [x] 3.2 (P) ColorExtractorの実装
   - 画像から支配色を抽出し、正規化された英語色名タグ（green, gold, blue等）に変換
   - パレットHEXコード（上位3-5色）の抽出
   - brightness_score（0.0-1.0）の算出
