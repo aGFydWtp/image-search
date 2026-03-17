@@ -78,6 +78,18 @@ uvicorn services.embedding.app:app --host 0.0.0.0 --port 8100
 
 初回起動時にモデル（約3.5GB）をダウンロードする。ウォームアップ完了まで20-30秒程度かかる。
 
+バックグラウンドで起動する場合:
+
+```bash
+nohup uvicorn services.embedding.app:app --host 0.0.0.0 --port 8100 > /tmp/siglip2.log 2>&1 &
+```
+
+停止する場合:
+
+```bash
+kill $(lsof -i :8100 -t)
+```
+
 ### 5. LM Studio
 
 LM StudioでVision対応モデル（Qwen2.5-VL、Qwen3.5等）をロードし、サーバーをポート1234で起動する。
