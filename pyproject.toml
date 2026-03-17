@@ -25,6 +25,9 @@ embedding = [
     "transformers>=4.49.0",
 ]
 
+[tool.setuptools.packages.find]
+include = ["shared*", "services*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]

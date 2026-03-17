@@ -16,7 +16,7 @@
   - ヘルスチェック設定（Qdrantの起動待ち）
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-- [ ] 1.3 QdrantRepositoryの実装とコレクション初期化
+- [x] 1.3 QdrantRepositoryの実装とコレクション初期化
   - artworks_v1コレクションの作成（image_semantic: 1152d Cosine, text_semantic: 1152d Cosine のnamed vectors定義）
   - payload indexの作成（mood_tags, motif_tags, color_tags: KeywordIndex, brightness_score: FloatIndex）
   - artwork pointのupsert機能（named vectors + payload）
