@@ -140,14 +140,14 @@
   - _Contracts: IngestionService API_
 
 - [ ] 7. 結合テストとE2Eテスト
-- [ ] 7.1 ユニットテストの実装
+- [x] 7.1 ユニットテストの実装
   - QueryParser: 各種日本語クエリ（ムード、色、モチーフ、複合、分解不能）に対する分解結果の検証
   - TaxonomyMapper: VLM出力の正規化ルール（モチーフ、ムード、除去）の検証
   - ColorExtractor: 色抽出・brightness/saturation算出の精度検証
   - Reranker: スコア合成ロジックとmatch_reasons生成の検証
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 7.1, 7.2, 7.3, 1.3, 3.4, 3.5_
 
-- [ ] 7.2 統合テストの実装
+- [x] 7.2 統合テストの実装
   - IngestionService: モックVLM/EmbeddingClient経由でパイプライン全体フロー（取得→前処理→VLM→色抽出→Taxonomy→埋め込み→保存）の動作確認
   - SearchService: モックQdrant経由で検索フロー全体（クエリ分解→フィルタ→ベクトル検索→リランキング→レスポンス）の動作確認
   - QdrantRepository: テスト用Qdrantコンテナでのupsert/search/exists動作確認
