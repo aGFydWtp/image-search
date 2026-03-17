@@ -111,7 +111,7 @@
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
   - _Contracts: QueryParser Service_
 
-- [ ] 5.2 Rerankerの実装
+- [x] 5.2 Rerankerの実装
   - ベクトル類似度スコアとpayloadメタデータを組み合わせたスコア合成（vector_similarity 70%, motif_match 15%, color_match 10%, brightness_affinity 5%）
   - motif_matchスコア: クエリのmotif_tagsと結果のmotif_tagsの一致度算出
   - color_matchスコア: クエリのcolor_tagsと結果のcolor_tagsの一致度算出
