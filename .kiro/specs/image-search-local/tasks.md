@@ -27,7 +27,7 @@
   - _Contracts: QdrantRepository Service_
 
 - [ ] 2. ホスト側MLサービス連携クライアントの実装
-- [ ] 2.1 (P) VLMClientの実装（LM Studio連携）
+- [x] 2.1 (P) VLMClientの実装（LM Studio連携）
   - LM StudioのOpenAI互換chat/completions APIを呼び出すHTTPクライアントを実装
   - 画像をbase64エンコードしてvisionメッセージとして送信
   - メタデータ抽出用プロンプトの定義（caption, motif候補, style候補, subject候補, mood候補をJSON形式で出力させる）
