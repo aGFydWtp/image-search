@@ -131,7 +131,7 @@
   - _Contracts: SearchService Service, API_
 
 - [ ] 6. 個別登録APIの実装
-- [ ] 6.1 POST /internal/artworks/index エンドポイントの実装
+- [x] 6.1 POST /internal/artworks/index エンドポイントの実装
   - artwork_id, image_url, title, artist_nameを受け取りインジェスションパイプラインを単一作品に対して実行
   - Qdrant内にartwork_idが既に存在する場合は既存pointを更新（upsert）
   - 画像URL取得失敗時のエラーログ記録と適切なHTTPエラーレスポンス（404または502）
