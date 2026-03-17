@@ -149,15 +149,18 @@ class TestSigLIP2Encoder:
             patch("services.embedding.encoder.AutoModel") as mock_model_cls,
             patch("services.embedding.encoder.AutoProcessor") as mock_proc_cls,
             patch("services.embedding.encoder.torch") as mock_torch,
+            patch("services.embedding.encoder.Image") as mock_image,
         ):
             mock_model = MagicMock()
             mock_model.to.return_value = mock_model
             mock_model.eval.return_value = mock_model
-            fake_tensor = MagicMock()
-            fake_tensor.squeeze.return_value = fake_tensor
-            fake_tensor.cpu.return_value = fake_tensor
-            fake_tensor.tolist.return_value = [0.5] * 1152
-            mock_model.get_image_features.return_value = fake_tensor
+            # _to_list expects pooler_output or a tensor with squeeze
+            fake_output = MagicMock()
+            fake_output.pooler_output = MagicMock()
+            fake_output.pooler_output.squeeze.return_value = fake_output.pooler_output
+            fake_output.pooler_output.cpu.return_value = fake_output.pooler_output
+            fake_output.pooler_output.tolist.return_value = [0.5] * 1152
+            mock_model.get_image_features.return_value = fake_output
             mock_model_cls.from_pretrained.return_value = mock_model
 
             mock_processor = MagicMock()
@@ -166,6 +169,8 @@ class TestSigLIP2Encoder:
 
             mock_torch.no_grad.return_value.__enter__ = MagicMock()
             mock_torch.no_grad.return_value.__exit__ = MagicMock()
+
+            mock_image.open.return_value.convert.return_value = MagicMock()
 
             from services.embedding.encoder import SigLIP2Encoder
 
@@ -184,11 +189,12 @@ class TestSigLIP2Encoder:
             mock_model = MagicMock()
             mock_model.to.return_value = mock_model
             mock_model.eval.return_value = mock_model
-            fake_tensor = MagicMock()
-            fake_tensor.squeeze.return_value = fake_tensor
-            fake_tensor.cpu.return_value = fake_tensor
-            fake_tensor.tolist.return_value = [0.3] * 1152
-            mock_model.get_text_features.return_value = fake_tensor
+            fake_output = MagicMock()
+            fake_output.pooler_output = MagicMock()
+            fake_output.pooler_output.squeeze.return_value = fake_output.pooler_output
+            fake_output.pooler_output.cpu.return_value = fake_output.pooler_output
+            fake_output.pooler_output.tolist.return_value = [0.3] * 1152
+            mock_model.get_text_features.return_value = fake_output
             mock_model_cls.from_pretrained.return_value = mock_model
 
             mock_processor = MagicMock()

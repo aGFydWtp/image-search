@@ -92,10 +92,33 @@ class VLMClient:
     def _call_api(self, messages: list[dict[str, Any]]) -> str:
         """LM Studio chat/completions APIを呼び出す。"""
         url = f"{self._base_url}/v1/chat/completions"
-        body = {
+        body: dict[str, Any] = {
             "messages": messages,
             "temperature": 0.2,
             "max_tokens": 1024,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "artwork_metadata",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "caption": {"type": "string"},
+                            "motif_candidates": {"type": "array", "items": {"type": "string"}},
+                            "style_candidates": {"type": "array", "items": {"type": "string"}},
+                            "subject_candidates": {"type": "array", "items": {"type": "string"}},
+                            "mood_candidates": {"type": "array", "items": {"type": "string"}},
+                        },
+                        "required": [
+                            "caption",
+                            "motif_candidates",
+                            "style_candidates",
+                            "subject_candidates",
+                            "mood_candidates",
+                        ],
+                    },
+                },
+            },
         }
 
         try:
@@ -153,15 +176,18 @@ class VLMClient:
             raise VLMExtractionError(f"VLM response validation failed: {e}") from e
 
     def _extract_json(self, raw: str) -> str:
-        """レスポンス文字列からJSON部分を抽出する。Markdownコードブロック対応。"""
+        """レスポンス文字列からJSON部分を抽出する。Markdownコードブロック・thinkタグ対応。"""
+        # <think>...</think> タグを除去（Qwen3.5等の思考モード対応）
+        cleaned = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
+
         # ```json ... ``` ブロックを探す
-        match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", raw, re.DOTALL)
+        match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", cleaned, re.DOTALL)
         if match:
             return match.group(1).strip()
 
-        # そのままJSONとして扱う
-        stripped = raw.strip()
-        if stripped.startswith("{"):
-            return stripped
+        # {...} ブロックを探す（前後にテキストがあっても抽出）
+        match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+        if match:
+            return match.group(0).strip()
 
         raise VLMExtractionError(f"No JSON found in VLM response: {raw[:200]}")

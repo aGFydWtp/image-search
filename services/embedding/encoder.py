@@ -13,6 +13,20 @@ DEFAULT_MODEL_NAME = "google/siglip2-so400m-patch14-384"
 VECTOR_DIM = 1152
 
 
+def _to_list(output) -> list[float]:
+    """モデル出力をfloatリストに変換する。
+
+    transformersバージョンにより返り値がtensorまたはBaseModelOutputWithPoolingの場合がある。
+    """
+    if hasattr(output, "pooler_output"):
+        tensor = output.pooler_output
+    elif hasattr(output, "squeeze"):
+        tensor = output
+    else:
+        raise TypeError(f"Unexpected model output type: {type(output)}")
+    return tensor.squeeze().cpu().tolist()
+
+
 class SigLIP2Encoder:
     """SigLIP2モデルによる画像・テキスト埋め込み生成。"""
 
@@ -31,25 +45,25 @@ class SigLIP2Encoder:
         """画像バイナリから埋め込みベクトルを生成する。"""
         image = Image.open(BytesIO(image_bytes)).convert("RGB")
         inputs = self._processor(images=image, return_tensors="pt")
-        pixel_values = inputs["pixel_values"].to(self._device)
+        inputs = {k: v.to(self._device) for k, v in inputs.items()}
 
         with torch.no_grad():
-            features = self._model.get_image_features(pixel_values=pixel_values)
+            output = self._model.get_image_features(**inputs)
 
-        return features.squeeze().cpu().tolist()
+        return _to_list(output)
 
     def encode_text(self, text: str) -> list[float]:
         """テキストから埋め込みベクトルを生成する。"""
-        inputs = self._processor(text=[text], return_tensors="pt", padding=True)
-        input_ids = inputs["input_ids"].to(self._device)
-        attention_mask = inputs["attention_mask"].to(self._device)
+        # SigLIP2は padding="max_length" で訓練されている（公式ドキュメント準拠）
+        inputs = self._processor(
+            text=[text], return_tensors="pt", padding="max_length", truncation=True
+        )
+        inputs = {k: v.to(self._device) for k, v in inputs.items()}
 
         with torch.no_grad():
-            features = self._model.get_text_features(
-                input_ids=input_ids, attention_mask=attention_mask
-            )
+            output = self._model.get_text_features(**inputs)
 
-        return features.squeeze().cpu().tolist()
+        return _to_list(output)
 
     def warmup(self) -> None:
         """モデルのウォームアップ（初回推論の遅延を回避）。"""
