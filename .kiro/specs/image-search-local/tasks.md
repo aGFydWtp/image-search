@@ -44,7 +44,7 @@
   - _Requirements: 1.5, 3.3_
   - _Contracts: EmbeddingClient Service_
 
-- [ ] 2.3 (P) SigLIP2埋め込みサービスのスタンドアロン実装
+- [x] 2.3 (P) SigLIP2埋め込みサービスのスタンドアロン実装
   - ホスト側で動作するFastAPIベースの埋め込みサービスを作成
   - SigLIP2 SO400M-patch14-384モデルをTransformers + MPSバックエンドでロード
   - POST /embed/image（画像バイナリ → 1152dベクトル）エンドポイント
