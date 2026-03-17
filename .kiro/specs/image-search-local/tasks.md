@@ -36,7 +36,7 @@
   - _Requirements: 1.2_
   - _Contracts: VLMClient Service_
 
-- [ ] 2.2 (P) EmbeddingClientの実装（SigLIP2サービス連携）
+- [x] 2.2 (P) EmbeddingClientの実装（SigLIP2サービス連携）
   - ホスト側SigLIP2埋め込みサービスのREST APIを呼び出すHTTPクライアントを実装
   - 画像バイナリから1152次元のimage_semanticベクトルを取得する機能
   - テキスト文字列から1152次元のtext_semanticベクトルを取得する機能
