@@ -21,6 +21,7 @@ build/
 
 # Firebase credentials
 config/firebase-credentials.json
+config/*-firebase-adminsdk-*.json
 
 # Qdrant data
 qdrant_data/
