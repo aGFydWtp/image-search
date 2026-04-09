@@ -167,4 +167,6 @@ def index_artwork(req: IndexRequest) -> IndexResponse:
 # 静的ファイル配信（APIルートの後に配置し、ルート優先順位を確保）
 _static_dir = Path(__file__).resolve().parent / "static"
 if _static_dir.is_dir():
-    app.mount("/", StaticFiles(directory=str(_static_dir), html=True), name="static")
+    app.mount("/", StaticFiles(directory=_static_dir, html=True), name="static")
+else:
+    logger.warning("Static files directory not found: %s — UI will not be served", _static_dir)

@@ -7,7 +7,6 @@ RUN pip install --no-cache-dir . && rm -rf /root/.cache
 
 COPY shared/ ./shared/
 COPY services/search/ ./services/search/
-COPY services/search/static/ ./services/search/static/
 COPY services/__init__.py ./services/__init__.py
 COPY services/ingestion/ ./services/ingestion/
 

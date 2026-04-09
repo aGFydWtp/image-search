@@ -35,7 +35,7 @@ export function initSearchForm({ onSearch }) {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const query = input.value.trim();
-    if (_loading || query.length === 0) return;
+    if (_loading || query.length === 0 || query.length > MAX_QUERY_LENGTH) return;
     onSearch(query);
   });
 

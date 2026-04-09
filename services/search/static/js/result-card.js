@@ -4,6 +4,14 @@
 
 const PLACEHOLDER_SRC = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23e0e0e0' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-size='14'%3ENo Image%3C/text%3E%3C/svg%3E";
 
+/** http: / https: スキームのみ許可する。 */
+function isSafeUrl(url) {
+  try {
+    const u = new URL(url, location.href);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch { return false; }
+}
+
 /**
  * 検索結果アイテムからカードDOM要素を生成する。
  * @param {Object} item - SearchResultItem
@@ -16,8 +24,8 @@ export function createResultCard(item) {
   // サムネイル画像
   const img = document.createElement("img");
   img.className = "result-card-image";
-  img.src = item.thumbnail_url;
-  img.alt = item.title;
+  img.src = isSafeUrl(item.thumbnail_url) ? item.thumbnail_url : PLACEHOLDER_SRC;
+  img.alt = item.title ?? "";
   img.loading = "lazy";
   img.onerror = () => {
     img.src = PLACEHOLDER_SRC;
@@ -30,12 +38,12 @@ export function createResultCard(item) {
 
   const title = document.createElement("div");
   title.className = "result-card-title";
-  title.textContent = item.title;
+  title.textContent = item.title ?? "";
   body.appendChild(title);
 
   const artist = document.createElement("div");
   artist.className = "result-card-artist";
-  artist.textContent = item.artist_name;
+  artist.textContent = item.artist_name ?? "";
   body.appendChild(artist);
 
   // match_reasons バッジ
@@ -59,7 +67,7 @@ export function createResultCard(item) {
 
   const scoreEl = document.createElement("div");
   scoreEl.className = "score";
-  scoreEl.textContent = item.score.toFixed(3);
+  scoreEl.textContent = typeof item.score === "number" ? item.score.toFixed(3) : "—";
   overlay.appendChild(scoreEl);
 
   if (item.match_reasons && item.match_reasons.length > 0) {

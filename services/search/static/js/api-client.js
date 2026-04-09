@@ -67,12 +67,13 @@ export class ApiError extends Error {
   /**
    * @param {string} message - ユーザー向けメッセージ
    * @param {number} status - HTTPステータス (0 = ネットワーク/タイムアウト)
-   * @param {string} [detail] - サーバーからの詳細
+   * @param {string} [detail] - サーバーからの詳細 (UNTRUSTED — textContentのみ使用、innerHTMLに渡さないこと)
    */
   constructor(message, status, detail = "") {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    /** @type {string} UNTRUSTED: サーバーからの生レスポンス。textContentのみ使用すること。 */
     this.detail = detail;
   }
 }

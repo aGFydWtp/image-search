@@ -18,9 +18,9 @@ export function initQueryInfo() {
 export function renderQueryInfo(parsedQuery) {
   if (!_el) return;
 
-  const { semantic_query, filters } = parsedQuery;
-  const hasMotif = filters.motif_tags && filters.motif_tags.length > 0;
-  const hasColor = filters.color_tags && filters.color_tags.length > 0;
+  const { semantic_query, filters = {} } = parsedQuery;
+  const hasMotif = Array.isArray(filters.motif_tags) && filters.motif_tags.length > 0;
+  const hasColor = Array.isArray(filters.color_tags) && filters.color_tags.length > 0;
 
   // フィルタが空なら非表示
   if (!hasMotif && !hasColor) {

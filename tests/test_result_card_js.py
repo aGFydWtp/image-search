@@ -57,3 +57,12 @@ class TestResultCardModule:
     def test_has_card_css_class(self) -> None:
         """result-card CSSクラスを使用していること。"""
         assert "result-card" in self.js
+
+    def test_validates_url_scheme(self) -> None:
+        """サムネイルURLのスキーム検証があること (XSS防止)。"""
+        assert "isSafeUrl" in self.js
+        assert "protocol" in self.js
+
+    def test_null_safe_title_and_artist(self) -> None:
+        """title/artist_nameのnullセーフ処理があること。"""
+        assert "??" in self.js

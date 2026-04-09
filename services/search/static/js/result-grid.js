@@ -18,10 +18,15 @@ export function initResultGrid() {
   els.count = document.getElementById("results-count");
 }
 
+function _ensureInit() {
+  if (!els.grid) throw new Error("initResultGrid() must be called before use");
+}
+
 /**
  * ローディング状態を表示する。
  */
 export function showLoading() {
+  _ensureInit();
   els.grid.innerHTML = "";
   els.loading.hidden = false;
   els.empty.hidden = true;
@@ -34,6 +39,7 @@ export function showLoading() {
  * @param {Object[]} items - SearchResultItem の配列
  */
 export function renderResults(items) {
+  _ensureInit();
   els.loading.hidden = true;
   els.error.hidden = true;
   els.grid.innerHTML = "";
@@ -58,6 +64,7 @@ export function renderResults(items) {
  * @param {string} message - ユーザー向けエラーメッセージ
  */
 export function showError(message) {
+  _ensureInit();
   els.loading.hidden = true;
   els.empty.hidden = true;
   els.grid.innerHTML = "";
