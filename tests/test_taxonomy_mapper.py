@@ -3,6 +3,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from shared.models.vlm import VLMExtractionResult
 
 
@@ -36,9 +38,27 @@ class TestNormalizedTagsModel:
             style_tags=["impressionism"],
             subject_tags=["landscape"],
             color_tags=[],
-            taxonomy_version="v1",
+            freeform_keywords=["lighthouse"],
+            taxonomy_version="v2",
         )
-        assert tags.taxonomy_version == "v1"
+        assert tags.taxonomy_version == "v2"
+        assert tags.freeform_keywords == ["lighthouse"]
+
+    def test_freeform_keywords_field_required(self) -> None:
+        """freeform_keywords は必須フィールドであること。"""
+        from pydantic import ValidationError
+
+        from shared.models.taxonomy import NormalizedTags
+
+        with pytest.raises(ValidationError):
+            NormalizedTags(
+                mood_tags=["calm"],
+                motif_tags=["sky"],
+                style_tags=[],
+                subject_tags=[],
+                color_tags=[],
+                taxonomy_version="v2",
+            )
 
 
 class TestMotifNormalization:
@@ -380,6 +400,96 @@ class TestSynonymConflictResolution:
         defs = self._defs()
         assert "ocean" not in defs["motif_vocabulary"]
         assert defs["motif_synonyms"].get("ocean") == "sea"
+
+
+class TestFreeformKeywordsCollection:
+    """freeform_keywords 収集ロジックのテスト（Task 2.2 / 5.1）。"""
+
+    def test_captures_unknown_motifs(self) -> None:
+        from shared.taxonomy.mapper import TaxonomyMapper
+
+        mapper = TaxonomyMapper()
+        result = mapper.normalize(_make_vlm_result(
+            motif_candidates=["sky", "lighthouse_unknown_xyz", "windmill_rare"]
+        ))
+        assert "sky" in result.motif_tags
+        assert "lighthouse_unknown_xyz" in result.freeform_keywords
+        assert "windmill_rare" in result.freeform_keywords
+
+    def test_excludes_stopwords(self) -> None:
+        from shared.taxonomy.mapper import TaxonomyMapper
+
+        mapper = TaxonomyMapper()
+        result = mapper.normalize(_make_vlm_result(
+            motif_candidates=["background", "composition", "rare_motif"]
+        ))
+        assert "background" not in result.freeform_keywords
+        assert "composition" not in result.freeform_keywords
+        assert "rare_motif" in result.freeform_keywords
+
+    def test_excludes_short_strings(self) -> None:
+        from shared.taxonomy.mapper import TaxonomyMapper
+
+        mapper = TaxonomyMapper()
+        result = mapper.normalize(_make_vlm_result(
+            motif_candidates=["a", "x", "rare_motif"]
+        ))
+        assert "a" not in result.freeform_keywords
+        assert "x" not in result.freeform_keywords
+        assert "rare_motif" in result.freeform_keywords
+
+    def test_excludes_long_strings(self) -> None:
+        from shared.taxonomy.mapper import TaxonomyMapper
+
+        mapper = TaxonomyMapper()
+        long_str = "a" * 51
+        result = mapper.normalize(_make_vlm_result(
+            motif_candidates=[long_str, "rare_motif"]
+        ))
+        assert long_str.lower() not in result.freeform_keywords
+        assert "rare_motif" in result.freeform_keywords
+
+    def test_deduplicates(self) -> None:
+        from shared.taxonomy.mapper import TaxonomyMapper
+
+        mapper = TaxonomyMapper()
+        result = mapper.normalize(_make_vlm_result(
+            motif_candidates=["Rare_Motif", "rare_motif", "RARE_MOTIF"]
+        ))
+        assert result.freeform_keywords.count("rare_motif") == 1
+
+    def test_excludes_synonym_matches(self) -> None:
+        """synonym に一致するものは freeform に入らないこと。"""
+        from shared.taxonomy.mapper import TaxonomyMapper
+
+        mapper = TaxonomyMapper()
+        result = mapper.normalize(_make_vlm_result(
+            motif_candidates=["ocean", "waves", "rare_motif"]
+        ))
+        # ocean, waves は synonym → motif_tags に入る
+        assert "sea" in result.motif_tags
+        # freeform には入らない
+        assert "ocean" not in result.freeform_keywords
+        assert "waves" not in result.freeform_keywords
+        assert "rare_motif" in result.freeform_keywords
+
+    def test_empty_when_all_match_taxonomy(self) -> None:
+        from shared.taxonomy.mapper import TaxonomyMapper
+
+        mapper = TaxonomyMapper()
+        result = mapper.normalize(_make_vlm_result(
+            motif_candidates=["sky", "sea", "tree"]
+        ))
+        assert result.freeform_keywords == []
+
+    def test_lowercase_normalization(self) -> None:
+        from shared.taxonomy.mapper import TaxonomyMapper
+
+        mapper = TaxonomyMapper()
+        result = mapper.normalize(_make_vlm_result(
+            motif_candidates=["EXOTIC_BIRD_TYPE"]
+        ))
+        assert "exotic_bird_type" in result.freeform_keywords
 
 
 class TestColorTagsPassthrough:

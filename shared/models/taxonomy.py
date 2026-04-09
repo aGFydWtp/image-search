@@ -10,5 +10,6 @@ class NormalizedTags(BaseModel):
     motif_tags: list[str]
     style_tags: list[str]
     subject_tags: list[str]
+    freeform_keywords: list[str]
     color_tags: list[str]
     taxonomy_version: str = Field(min_length=1)

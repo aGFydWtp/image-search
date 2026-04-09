@@ -28,6 +28,7 @@ def _valid_payload_kwargs() -> dict:
         motif_tags=["空"],
         style_tags=[],
         subject_tags=[],
+        freeform_keywords=["lighthouse", "windmill"],
         color_tags=["green", "gold"],
         palette_hex=["#A8C66C"],
         brightness_score=0.78,
@@ -83,6 +84,16 @@ class TestArtworkPayload:
         kwargs["palette_hex"] = ["#A8C66C", "#D9B44A", "#EDE7D1"]
         payload = ArtworkPayload(**kwargs)
         assert len(payload.palette_hex) == 3
+
+    def test_freeform_keywords_field(self) -> None:
+        payload = ArtworkPayload(**_valid_payload_kwargs())
+        assert payload.freeform_keywords == ["lighthouse", "windmill"]
+
+    def test_freeform_keywords_required(self) -> None:
+        kwargs = _valid_payload_kwargs()
+        del kwargs["freeform_keywords"]
+        with pytest.raises(ValidationError):
+            ArtworkPayload(**kwargs)
 
     def test_invalid_image_url_rejected(self) -> None:
         kwargs = _valid_payload_kwargs()

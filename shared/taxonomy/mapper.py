@@ -45,9 +45,30 @@ class TaxonomyMapper:
             subject_tags=self._normalize_list(
                 raw.subject_candidates, self._subject_synonyms, self._subject_vocab
             ),
+            freeform_keywords=self._collect_freeform_keywords(raw.motif_candidates),
             color_tags=[],
             taxonomy_version=self._version,
         )
+
+    def _collect_freeform_keywords(self, candidates: list[str]) -> list[str]:
+        """motif_candidatesのうちtaxonomyに一致しなかったものをフリーワードとして収集する。"""
+        result: list[str] = []
+        seen: set[str] = set()
+
+        for candidate in candidates:
+            normalized = candidate.strip().lower()
+
+            if len(normalized) <= 1 or len(normalized) > 50:
+                continue
+            if normalized in self._stopwords:
+                continue
+            if normalized in self._motif_synonyms or normalized in self._motif_vocab:
+                continue
+            if normalized not in seen:
+                result.append(normalized)
+                seen.add(normalized)
+
+        return result
 
     def _normalize_list(
         self,

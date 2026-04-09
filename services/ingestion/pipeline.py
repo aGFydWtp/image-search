@@ -115,6 +115,7 @@ class IngestionService:
             motif_tags=normalized.motif_tags,
             style_tags=normalized.style_tags,
             subject_tags=normalized.subject_tags,
+            freeform_keywords=normalized.freeform_keywords,
             color_tags=normalized.color_tags,
             palette_hex=color_info.palette_hex,
             brightness_score=color_info.brightness_score,

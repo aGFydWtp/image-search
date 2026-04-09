@@ -14,20 +14,20 @@
   - taxonomy_version を "v1" から "v2" に更新する
   - _Requirements: 5.4, 5.5, 5.6_
 
-- [ ] 2. データモデルとパイプラインへの freeform_keywords 組み込み
-- [ ] 2.1 (P) NormalizedTags と ArtworkPayload に freeform_keywords フィールドを追加する
+- [x] 2. データモデルとパイプラインへの freeform_keywords 組み込み
+- [x] 2.1 (P) NormalizedTags と ArtworkPayload に freeform_keywords フィールドを追加する
   - NormalizedTags モデルに `freeform_keywords: list[str]` フィールドを追加する
   - ArtworkPayload モデルに `freeform_keywords: list[str]` フィールドを subject_tags の後に追加する
   - _Requirements: 1.1, 1.5_
 
-- [ ] 2.2 (P) TaxonomyMapper に freeform_keywords 収集ロジックを実装する
+- [x] 2.2 (P) TaxonomyMapper に freeform_keywords 収集ロジックを実装する
   - `_collect_freeform_keywords` メソッドを追加し、motif_candidates のうち vocabulary/synonym に一致しなかった候補を収集する
   - ストップワード除外、1文字以下・50文字超の除外、小文字正規化、重複排除のフィルタリングを実装する
   - `normalize` メソッドで `_collect_freeform_keywords` を呼び出し、結果を NormalizedTags.freeform_keywords に設定する
   - 全候補が Taxonomy 一致した場合は空リストを返すことを確認する
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.6_
 
-- [ ] 2.3 IngestionService で freeform_keywords を ArtworkPayload に渡す
+- [x] 2.3 IngestionService で freeform_keywords を ArtworkPayload に渡す
   - `_run_pipeline` の ArtworkPayload 構築箇所に `freeform_keywords=normalized.freeform_keywords` を追加する
   - 2.1 と 2.2 の完了が前提
   - _Requirements: 1.5_
