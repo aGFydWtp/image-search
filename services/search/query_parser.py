@@ -62,7 +62,7 @@ _MOTIF_MAP: dict[str, str] = {
     "城": "castle",
     "塔": "tower",
     "寺": "temple",
-    "教会": "church building",
+    "教会": "church",
     "灯台": "lighthouse",
     "宮殿": "palace",
     "廃墟": "ruins",

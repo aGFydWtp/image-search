@@ -75,14 +75,14 @@ class Reranker:
 
     def _calc_freeform_match(self, candidate: SearchResult, query: ParsedQuery) -> float:
         """freeform_keywordsとクエリ語のマッチ度 (0.0-1.0)。"""
-        freeform = set(candidate.payload.get("freeform_keywords", []))
+        freeform = {kw.lower() for kw in candidate.payload.get("freeform_keywords", [])}
         if not freeform:
             return 0.0
         query_tokens = set(query.semantic_query.lower().split())
         if not query_tokens:
             return 0.0
         matched = query_tokens & freeform
-        return len(matched) / len(query_tokens)
+        return len(matched) / len(freeform)
 
     def _calc_brightness_affinity(self, candidate: SearchResult, query: ParsedQuery) -> float:
         """brightness boostとの近接度 (0.0-1.0)。"""

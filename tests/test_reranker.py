@@ -199,9 +199,8 @@ class TestFreeformKeywordsBoost:
         query = _make_query(semantic_query="lighthouse")
 
         results = reranker.rerank(candidates, query)
-        # Score should not include freeform boost
-        # With vector=0.9, freeform=0: 0.65*0.9 = 0.585
-        assert results[0].score < 0.65 * 0.9 + 0.06  # no significant freeform boost
+        expected = round(0.65 * 0.9, 4)
+        assert abs(results[0].score - expected) < 0.001
 
     def test_freeform_match_reason_included(self) -> None:
         from services.search.reranker import Reranker
