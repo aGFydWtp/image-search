@@ -1,5 +1,8 @@
 """QueryParser: 自然言語クエリをsemantic_query + filters + boostsに分解する。"""
 
+import json
+from functools import lru_cache
+from pathlib import Path
 
 from shared.models.search import ParsedQuery, QueryBoosts, QueryFilters
 
@@ -21,74 +24,29 @@ _COLOR_MAP: dict[str, str] = {
     "水色": "teal",
 }
 
-# 日本語モチーフ表現 → 英語motif_tags
-_MOTIF_MAP: dict[str, str] = {
-    # 既存24語
-    "空": "sky",
-    "海": "sea",
-    "花": "flower",
-    "山": "mountain",
-    "木": "tree",
-    "森": "forest",
-    "川": "river",
-    "湖": "lake",
-    "太陽": "sun",
-    "月": "moon",
-    "星": "star",
-    "鳥": "bird",
-    "雪": "snow",
-    "雨": "rain",
-    "街": "city",
-    "家": "house",
-    "人": "figure",
-    "橋": "bridge",
-    "船": "boat",
-    "庭": "garden",
-    "岩": "rock",
-    "道": "road",
-    "窓": "window",
-    "火": "fire",
-    # 拡張: 動物
-    "猫": "cat",
-    "犬": "dog",
-    "馬": "horse",
-    "蝶": "butterfly",
-    "鹿": "deer",
-    "魚": "fish",
-    "象": "elephant",
-    "蛇": "snake",
-    "鷹": "eagle",
-    # 拡張: 建築・構造物
-    "城": "castle",
-    "塔": "tower",
-    "寺": "temple",
-    "教会": "church",
-    "灯台": "lighthouse",
-    "宮殿": "palace",
-    "廃墟": "ruins",
-    # 拡張: 自然・地形
-    "虹": "rainbow",
-    "滝": "waterfall",
-    "泉": "fountain",
-    "丘": "hill",
-    "砂漠": "desert",
-    "島": "island",
-    "洞窟": "cave",
-    "火山": "volcano",
-    "雲": "cloud",
-    "霧": "fog",
-    "嵐": "storm",
-    "稲妻": "lightning",
-    # 拡張: 植物
-    "薔薇": "rose",
-    "蓮": "lotus",
-    "百合": "lily",
-    # 拡張: 物品・シンボル
-    "剣": "sword",
-    "冠": "crown",
-    "鏡": "mirror",
-    "鐘": "bell",
-}
+
+@lru_cache(maxsize=1)
+def _load_motif_map() -> list[tuple[str, str]]:
+    """config/motif_jp_map.json から (JP, EN) ペアのリストを構築する。
+
+    JSONは EN→[JP list] 形式。1つの日本語表現が複数の英語タグに
+    マッチし得る（例: "海"→sea, ocean）。
+    長い日本語表現を先にマッチさせるため、文字数降順でソートして返す。
+    """
+    config_path = Path(__file__).resolve().parents[2] / "config" / "motif_jp_map.json"
+    with open(config_path, encoding="utf-8") as f:
+        data: dict[str, list[str]] = json.load(f)
+
+    pairs: list[tuple[str, str]] = []
+    for en_tag, jp_list in data.items():
+        if en_tag.startswith("_"):
+            continue
+        for jp_expr in jp_list:
+            pairs.append((jp_expr, en_tag))
+
+    # 長い表現を先にマッチさせる（例: "火山" を "火" より先に）
+    pairs.sort(key=lambda x: len(x[0]), reverse=True)
+    return pairs
 
 # 明るさ関連の日本語表現 → brightness_min値
 _BRIGHTNESS_BRIGHT: list[str] = ["明るい", "明るく", "光", "輝", "鮮やか"]
@@ -136,9 +94,10 @@ class QueryParser:
 
     def _extract_motifs(self, query: str) -> list[str]:
         """クエリからモチーフ表現を抽出し、英語タグに変換する。"""
+        pairs = _load_motif_map()
         found: list[str] = []
         seen: set[str] = set()
-        for jp, en in _MOTIF_MAP.items():
+        for jp, en in pairs:
             if jp in query and en not in seen:
                 found.append(en)
                 seen.add(en)
