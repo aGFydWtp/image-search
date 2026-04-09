@@ -52,14 +52,6 @@ def _load_motif_map() -> list[tuple[str, str]]:
 _BRIGHTNESS_BRIGHT: list[str] = ["明るい", "明るく", "光", "輝", "鮮やか"]
 _BRIGHTNESS_DARK: list[str] = ["暗い", "暗く", "暗め", "ダーク", "闇"]
 
-# ムード/雰囲気の日本語表現（semantic_queryに残す）
-_MOOD_EXPRESSIONS: list[str] = [
-    "やさしい", "優しい", "穏やか", "静か", "落ち着", "温かい", "あたたかい",
-    "冷たい", "涼しい", "寂しい", "悲しい", "楽しい", "力強い",
-    "神秘", "幻想", "ドラマチック", "ノスタルジック", "エレガント",
-    "透明感", "爽やか", "重厚", "繊細", "大胆",
-]
-
 
 class QueryParser:
     """日本語自然言語クエリを構造化されたParsedQueryに分解する。"""
