@@ -43,7 +43,7 @@ class FirebaseStorageClient:
     def get_public_url(self, blob_path: str) -> str:
         """Firebase Storage の公開URLを生成する。"""
         encoded = quote(blob_path, safe="")
-        return f"https://firebasestorage.googleapis.com/v0/b/{self._bucket.name}/o/{encoded}?alt=media"
+        return f"https://storage.googleapis.com/{self._bucket.name}/{encoded}?alt=media"
 
     @staticmethod
     def extract_artwork_id(blob_path: str) -> str:

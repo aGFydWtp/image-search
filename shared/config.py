@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     # Firebase
     firebase_credentials_path: str = ""
     firebase_storage_bucket: str = ""
+    firebase_storage_prefix: str = ""
 
     # Vector dimensions
     vector_dim: int = 1152

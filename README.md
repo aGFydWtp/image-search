@@ -162,10 +162,10 @@ curl -X POST http://localhost:8000/internal/artworks/index \
 ### バッチインジェスション
 
 ```bash
-docker compose exec ingestion python -m services.ingestion.run
+docker compose run --rm ingestion python -m services.ingestion.run
 ```
 
-Firebase Storageから未処理画像を取得し、特徴抽出パイプラインを実行してQdrantに保存する。
+Firebase Storageの `FIREBASE_STORAGE_PREFIX` で指定したフォルダから未処理画像を取得し、特徴抽出パイプラインを実行してQdrantに保存する。既にインデックス済みの画像はスキップされる。
 
 
 ## プロジェクト構成
@@ -253,6 +253,7 @@ pytest tests/test_e2e.py -v
 | EMBEDDING_SERVICE_URL | http://localhost:8100 | SigLIP2サービスエンドポイント |
 | FIREBASE_CREDENTIALS_PATH | | Firebase認証情報JSONパス |
 | FIREBASE_STORAGE_BUCKET | | Firebase Storageバケット名 |
+| FIREBASE_STORAGE_PREFIX | | バッチ取得対象のフォルダプレフィックス |
 | VECTOR_DIM | 1152 | 埋め込みベクトル次元数 |
 
 
