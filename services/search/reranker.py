@@ -4,10 +4,11 @@ from shared.models.search import ParsedQuery, SearchResultItem
 from shared.qdrant.repository import SearchResult
 
 # スコア合成の重み
-_W_VECTOR = 0.70
+_W_VECTOR = 0.65
 _W_MOTIF = 0.15
 _W_COLOR = 0.10
 _W_BRIGHTNESS = 0.05
+_W_FREEFORM = 0.05
 
 
 class Reranker:
@@ -24,17 +25,20 @@ class Reranker:
             motif_score = self._calc_motif_match(candidate, parsed_query)
             color_score = self._calc_color_match(candidate, parsed_query)
             brightness_score = self._calc_brightness_affinity(candidate, parsed_query)
+            freeform_score = self._calc_freeform_match(candidate, parsed_query)
 
             final = (
                 _W_VECTOR * candidate.score
                 + _W_MOTIF * motif_score
                 + _W_COLOR * color_score
                 + _W_BRIGHTNESS * brightness_score
+                + _W_FREEFORM * freeform_score
             )
             final = max(0.0, min(1.0, final))
 
             reasons = self._build_reasons(
-                candidate, parsed_query, motif_score, color_score, brightness_score
+                candidate, parsed_query, motif_score, color_score, brightness_score,
+                freeform_score,
             )
 
             scored.append(
@@ -69,6 +73,17 @@ class Reranker:
         matched = query_colors & result_colors
         return len(matched) / len(query_colors)
 
+    def _calc_freeform_match(self, candidate: SearchResult, query: ParsedQuery) -> float:
+        """freeform_keywordsとクエリ語のマッチ度 (0.0-1.0)。"""
+        freeform = set(candidate.payload.get("freeform_keywords", []))
+        if not freeform:
+            return 0.0
+        query_tokens = set(query.semantic_query.lower().split())
+        if not query_tokens:
+            return 0.0
+        matched = query_tokens & freeform
+        return len(matched) / len(query_tokens)
+
     def _calc_brightness_affinity(self, candidate: SearchResult, query: ParsedQuery) -> float:
         """brightness boostとの近接度 (0.0-1.0)。"""
         if query.boosts.brightness_min is None:
@@ -85,6 +100,7 @@ class Reranker:
         motif_score: float,
         color_score: float,
         brightness_score: float,
+        freeform_score: float = 0.0,
     ) -> list[str]:
         """ヒット理由の自然言語リストを生成する。"""
         reasons: list[str] = []
@@ -112,5 +128,9 @@ class Reranker:
         # 明るさ近接
         if brightness_score > 0.7:
             reasons.append("明るさが近い")
+
+        # freeform キーワード一致
+        if freeform_score > 0:
+            reasons.append("キーワード一致")
 
         return reasons

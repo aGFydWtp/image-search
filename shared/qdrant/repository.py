@@ -71,7 +71,7 @@ class QdrantRepository:
         )
         logger.info("Created collection %s", self._collection)
 
-        for tag_field in ("mood_tags", "motif_tags", "color_tags"):
+        for tag_field in ("mood_tags", "motif_tags", "color_tags", "freeform_keywords"):
             self._client.create_payload_index(
                 collection_name=self._collection,
                 field_name=tag_field,

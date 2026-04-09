@@ -23,12 +23,13 @@ _COLOR_MAP: dict[str, str] = {
 
 # 日本語モチーフ表現 → 英語motif_tags
 _MOTIF_MAP: dict[str, str] = {
+    # 既存24語
     "空": "sky",
     "海": "sea",
     "花": "flower",
     "山": "mountain",
     "木": "tree",
-    "森": "tree",
+    "森": "forest",
     "川": "river",
     "湖": "lake",
     "太陽": "sun",
@@ -47,6 +48,46 @@ _MOTIF_MAP: dict[str, str] = {
     "道": "road",
     "窓": "window",
     "火": "fire",
+    # 拡張: 動物
+    "猫": "cat",
+    "犬": "dog",
+    "馬": "horse",
+    "蝶": "butterfly",
+    "鹿": "deer",
+    "魚": "fish",
+    "象": "elephant",
+    "蛇": "snake",
+    "鷹": "eagle",
+    # 拡張: 建築・構造物
+    "城": "castle",
+    "塔": "tower",
+    "寺": "temple",
+    "教会": "church building",
+    "灯台": "lighthouse",
+    "宮殿": "palace",
+    "廃墟": "ruins",
+    # 拡張: 自然・地形
+    "虹": "rainbow",
+    "滝": "waterfall",
+    "泉": "fountain",
+    "丘": "hill",
+    "砂漠": "desert",
+    "島": "island",
+    "洞窟": "cave",
+    "火山": "volcano",
+    "雲": "cloud",
+    "霧": "fog",
+    "嵐": "storm",
+    "稲妻": "lightning",
+    # 拡張: 植物
+    "薔薇": "rose",
+    "蓮": "lotus",
+    "百合": "lily",
+    # 拡張: 物品・シンボル
+    "剣": "sword",
+    "冠": "crown",
+    "鏡": "mirror",
+    "鐘": "bell",
 }
 
 # 明るさ関連の日本語表現 → brightness_min値

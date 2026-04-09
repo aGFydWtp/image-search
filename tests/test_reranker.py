@@ -11,6 +11,7 @@ def _make_candidate(
     motif_tags: list[str] | None = None,
     color_tags: list[str] | None = None,
     brightness_score: float = 0.5,
+    freeform_keywords: list[str] | None = None,
 ) -> SearchResult:
     return SearchResult(
         artwork_id=artwork_id,
@@ -22,6 +23,7 @@ def _make_candidate(
             "motif_tags": motif_tags or [],
             "color_tags": color_tags or [],
             "brightness_score": brightness_score,
+            "freeform_keywords": freeform_keywords or [],
         },
     )
 
@@ -171,6 +173,62 @@ class TestMatchReasons:
 
         motif_reasons = [r for r in results[0].match_reasons if "mountain" in r]
         assert len(motif_reasons) == 0
+
+
+class TestFreeformKeywordsBoost:
+    """freeform_keywords マッチスコアのテスト（Task 4.1 / 5.2）。"""
+
+    def test_freeform_match_boosts_score(self) -> None:
+        from services.search.reranker import Reranker
+
+        reranker = Reranker()
+        candidates = [
+            _make_candidate("no_freeform", score=0.8, freeform_keywords=[]),
+            _make_candidate("has_freeform", score=0.8, freeform_keywords=["lighthouse", "windmill"]),
+        ]
+        query = _make_query(semantic_query="lighthouse painting")
+
+        results = reranker.rerank(candidates, query)
+        assert results[0].artwork_id == "has_freeform"
+
+    def test_no_freeform_keywords_zero_score(self) -> None:
+        from services.search.reranker import Reranker
+
+        reranker = Reranker()
+        candidates = [_make_candidate(freeform_keywords=[])]
+        query = _make_query(semantic_query="lighthouse")
+
+        results = reranker.rerank(candidates, query)
+        # Score should not include freeform boost
+        # With vector=0.9, freeform=0: 0.65*0.9 = 0.585
+        assert results[0].score < 0.65 * 0.9 + 0.06  # no significant freeform boost
+
+    def test_freeform_match_reason_included(self) -> None:
+        from services.search.reranker import Reranker
+
+        reranker = Reranker()
+        candidates = [_make_candidate(freeform_keywords=["lighthouse"])]
+        query = _make_query(semantic_query="lighthouse by the sea")
+
+        results = reranker.rerank(candidates, query)
+        assert any("キーワード一致" in r for r in results[0].match_reasons)
+
+    def test_freeform_no_match_no_reason(self) -> None:
+        from services.search.reranker import Reranker
+
+        reranker = Reranker()
+        candidates = [_make_candidate(freeform_keywords=["windmill"])]
+        query = _make_query(semantic_query="lighthouse")
+
+        results = reranker.rerank(candidates, query)
+        assert not any("キーワード一致" in r for r in results[0].match_reasons)
+
+    def test_weight_distribution_sums_to_one(self) -> None:
+        from services.search.reranker import (
+            _W_VECTOR, _W_MOTIF, _W_COLOR, _W_BRIGHTNESS, _W_FREEFORM,
+        )
+        total = _W_VECTOR + _W_MOTIF + _W_COLOR + _W_BRIGHTNESS + _W_FREEFORM
+        assert abs(total - 1.0) < 1e-9
 
 
 class TestRankedResultFields:

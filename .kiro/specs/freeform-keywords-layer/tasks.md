@@ -32,13 +32,13 @@
   - 2.1 と 2.2 の完了が前提
   - _Requirements: 1.5_
 
-- [ ] 3. Qdrant スキーマ拡張
-- [ ] 3.1 QdrantRepository の ensure_collection に freeform_keywords KEYWORD インデックスを追加する
+- [x] 3. Qdrant スキーマ拡張
+- [x] 3.1 QdrantRepository の ensure_collection に freeform_keywords KEYWORD インデックスを追加する
   - tag_field ループに "freeform_keywords" を追加し、KEYWORD 型のペイロードインデックスを作成する
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 4. 検索層の freeform_keywords 対応
-- [ ] 4.1 (P) Reranker に freeform_keywords マッチスコアを組み込む
+- [x] 4. 検索層の freeform_keywords 対応
+- [x] 4.1 (P) Reranker に freeform_keywords マッチスコアを組み込む
   - スコア合成の重み定数を変更する（vector 0.70→0.65、freeform 0.05 を新設）
   - `_calc_freeform_match` メソッドを追加し、semantic_query トークンと候補の freeform_keywords の交差率を算出する
   - `rerank` メソッドのスコア合成に freeform スコアを追加する
@@ -46,25 +46,25 @@
   - freeform_keywords が存在しない候補のスコアを 0.0 にする
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 4.2 (P) Query Parser の日本語モチーフマッピングを拡張する
+- [x] 4.2 (P) Query Parser の日本語モチーフマッピングを拡張する
   - 既存24語のマッピングを維持したまま、頻出する約30語の日本語→英語マッピングを追加する（猫→cat, 犬→dog, 馬→horse, 蝶→butterfly, 城→castle, 灯台→lighthouse, 虹→rainbow, 滝→waterfall 等）
   - vocabulary 分離に伴い、既存マッピング「森→tree」を「森→forest」に変更する
   - 色・明るさ・ムード抽出のロジックに影響がないことを確認する
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-- [ ] 5. テスト
-- [ ] 5.1 TaxonomyMapper の freeform_keywords 収集テストを追加する
+- [x] 5. テスト
+- [x] 5.1 TaxonomyMapper の freeform_keywords 収集テストを追加する
   - 非一致候補の収集、stopword 除外、長さフィルタ、重複排除、synonym 除外、全一致時の空リスト（6ケース）
   - 815語 vocabulary での正規化動作と新 synonym の解決を検証する
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.6, 5.4, 5.5_
 
-- [ ] 5.2 (P) Reranker の freeform boost テストを追加する
+- [x] 5.2 (P) Reranker の freeform boost テストを追加する
   - freeform 一致ありでスコアが向上することを検証する
   - freeform_keywords なしの候補でスコアが 0.0 であることを検証する
   - match_reasons に「キーワード一致」が追加されることを検証する
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 5.3 (P) Query Parser の拡張マッピングテストを追加する
+- [x] 5.3 (P) Query Parser の拡張マッピングテストを追加する
   - 新規追加した日本語モチーフ（猫、城、灯台等）が正しく英語タグに変換されることを検証する
   - 既存マッピング（空→sky, 海→sea 等）が維持されていることを検証する
   - 「森」の変更（tree→forest）が反映されていることを検証する

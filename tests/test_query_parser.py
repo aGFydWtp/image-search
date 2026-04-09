@@ -108,6 +108,60 @@ class TestMotifExtraction:
         assert "sea" in result.filters.motif_tags
 
 
+class TestExpandedMotifExtraction:
+    """拡張モチーフマッピングのテスト（Task 4.2 / 5.3）。"""
+
+    def test_new_animal_motifs(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        for jp, en in [("猫", "cat"), ("犬", "dog"), ("馬", "horse"), ("蝶", "butterfly")]:
+            result = parser.parse(f"{jp}のいる風景")
+            assert en in result.filters.motif_tags, f"{jp}→{en} failed"
+
+    def test_new_architecture_motifs(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        for jp, en in [("城", "castle"), ("灯台", "lighthouse"), ("塔", "tower")]:
+            result = parser.parse(f"{jp}のある風景")
+            assert en in result.filters.motif_tags, f"{jp}→{en} failed"
+
+    def test_new_nature_motifs(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        for jp, en in [("虹", "rainbow"), ("滝", "waterfall"), ("雲", "cloud"), ("霧", "fog")]:
+            result = parser.parse(f"{jp}の見える風景")
+            assert en in result.filters.motif_tags, f"{jp}→{en} failed"
+
+    def test_forest_mapping_changed(self) -> None:
+        """森 は tree ではなく forest にマッピングされること。"""
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        result = parser.parse("森の中の風景")
+        assert "forest" in result.filters.motif_tags
+        assert "tree" not in result.filters.motif_tags
+
+    def test_existing_mappings_preserved(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        for jp, en in [("空", "sky"), ("海", "sea"), ("花", "flower"), ("山", "mountain")]:
+            result = parser.parse(f"{jp}の絵")
+            assert en in result.filters.motif_tags, f"Existing {jp}→{en} broken"
+
+    def test_no_impact_on_color_extraction(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        result = parser.parse("猫と赤い花のある城")
+        assert "cat" in result.filters.motif_tags
+        assert "castle" in result.filters.motif_tags
+        assert "red" in result.filters.color_tags
+
+
 class TestBrightnessBoost:
     """明るさ関連表現 → brightness boost変換テスト。"""
 
