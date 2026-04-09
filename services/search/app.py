@@ -2,9 +2,11 @@
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 
 from shared.models.ingestion import IndexRequest, IndexResponse
 from shared.models.search import SearchRequest, SearchResponse
@@ -160,3 +162,9 @@ def index_artwork(req: IndexRequest) -> IndexResponse:
         artwork_id=req.artwork_id,
         status="updated" if already_exists else "created",
     )
+
+
+# 静的ファイル配信（APIルートの後に配置し、ルート優先順位を確保）
+_static_dir = Path(__file__).resolve().parent / "static"
+if _static_dir.is_dir():
+    app.mount("/", StaticFiles(directory=str(_static_dir), html=True), name="static")

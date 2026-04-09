@@ -1,0 +1,299 @@
+/* === CSS Custom Properties === */
+:root {
+    --color-bg: #f5f5f5;
+    --color-surface: #ffffff;
+    --color-text: #1a1a1a;
+    --color-text-secondary: #666666;
+    --color-primary: #2563eb;
+    --color-primary-hover: #1d4ed8;
+    --color-border: #e0e0e0;
+    --color-error: #dc2626;
+    --color-badge-motif: #16a34a;
+    --color-badge-motif-bg: #dcfce7;
+    --color-badge-color: #2563eb;
+    --color-badge-color-bg: #dbeafe;
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* === Reset & Base === */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.6;
+}
+
+/* === Header === */
+.app-header {
+    text-align: center;
+    padding: var(--spacing-lg) var(--spacing-md);
+}
+
+.app-header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+/* === Search Form === */
+#search-section {
+    max-width: 640px;
+    margin: 0 auto var(--spacing-xl);
+    padding: 0 var(--spacing-md);
+}
+
+.search-input-wrapper {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+#search-input {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 1rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#search-input:focus {
+    border-color: var(--color-primary);
+}
+
+#search-button {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--color-primary);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+#search-button:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+}
+
+#search-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.char-count {
+    text-align: right;
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    margin-top: var(--spacing-xs);
+}
+
+/* === Query Info === */
+#query-info {
+    max-width: 960px;
+    margin: 0 auto var(--spacing-md);
+    padding: 0 var(--spacing-md);
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+}
+
+.query-info-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+/* === Badge / Tag === */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 12px;
+    line-height: 1.4;
+}
+
+.badge-motif {
+    color: var(--color-badge-motif);
+    background: var(--color-badge-motif-bg);
+}
+
+.badge-color {
+    color: var(--color-badge-color);
+    background: var(--color-badge-color-bg);
+}
+
+.badge-reason {
+    color: var(--color-text-secondary);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+}
+
+/* === Results === */
+#results-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+#results-header {
+    margin-bottom: var(--spacing-md);
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+}
+
+/* === Result Grid (Responsive) === */
+.result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+}
+
+/* === Result Card === */
+.result-card {
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+    position: relative;
+}
+
+.result-card:hover {
+    box-shadow: var(--shadow-hover);
+}
+
+.result-card-image {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    display: block;
+    background: var(--color-bg);
+}
+
+.result-card-body {
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
+}
+
+.result-card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.result-card-artist {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.result-card-reasons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/* === Card Overlay (hover/tap detail) === */
+.result-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: var(--spacing-md);
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+
+.result-card:hover .result-card-overlay {
+    opacity: 1;
+}
+
+.result-card-overlay .score {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: var(--spacing-sm);
+}
+
+.result-card-overlay .reasons-list {
+    list-style: none;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+/* === Loading === */
+.loading {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-secondary);
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    margin: 0 auto var(--spacing-sm);
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* === Empty & Error Messages === */
+.empty-message, .error-message {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-secondary);
+}
+
+.error-message {
+    color: var(--color-error);
+}
+
+/* === Mobile (< 768px) === */
+@media (max-width: 768px) {
+    .result-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+
+    .app-header h1 {
+        font-size: 1.2rem;
+    }
+
+    #search-section {
+        padding: 0 var(--spacing-sm);
+    }
+
+    .result-card-overlay {
+        opacity: 0;
+    }
+
+    .result-card-overlay.active {
+        opacity: 1;
+    }
+}
