@@ -1,13 +1,13 @@
 # Implementation Plan
 
-- [ ] 1. Taxonomy 語彙の拡張（definitions.json v2）
-- [ ] 1.1 motif_vocabulary を Met Museum タグベースで815語に拡張する
+- [x] 1. Taxonomy 語彙の拡張（definitions.json v2）
+- [x] 1.1 motif_vocabulary を Met Museum タグベースで815語に拡張する
   - `config/met_museum_tags_filtered.json` の812語と既存32語を統合し、重複排除した語彙リストを生成する
   - 学名表記を一般名に正規化する（Bambusoideae→bamboo, Cupressus→cypress, Panthera pardus→leopard 等21件）
   - 固有名詞、言語・文字体系、宗教的イベントが含まれていないことを検証する
   - _Requirements: 5.1, 5.2, 5.3_
 
-- [ ] 1.2 motif_synonyms の衝突解消と新規追加
+- [x] 1.2 motif_synonyms の衝突解消と新規追加
   - 新 vocabulary 語と衝突する既存 synonym を削除する（cloud→sky, forest→tree, hill→mountain, building→house, person→figure, people→figure, woman→figure, man→figure, child→figure）
   - 複数形→単数形の基本 synonym を新語彙に対して追加する（buildings→building, hills→hill, forests→forest, clouds→cloud, children→child, wolves→wolf 等）
   - ocean→sea, waves→sea 等の既存有効 synonym が維持されていることを確認する
