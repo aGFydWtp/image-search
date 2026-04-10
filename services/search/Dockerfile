@@ -6,6 +6,7 @@ COPY pyproject.toml .
 RUN pip install --no-cache-dir . && rm -rf /root/.cache
 
 COPY shared/ ./shared/
+COPY config/ ./config/
 COPY services/search/ ./services/search/
 COPY services/__init__.py ./services/__init__.py
 COPY services/ingestion/ ./services/ingestion/
