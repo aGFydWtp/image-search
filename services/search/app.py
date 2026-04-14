@@ -29,8 +29,6 @@ async def lifespan(app: FastAPI):
     global _query_parser, _embedding_client, _qdrant_repo, _reranker
     global _ingestion_service, _index_http_client
 
-    from qdrant_client import QdrantClient
-
     from services.ingestion.color_extractor import ColorExtractor
     from services.ingestion.image_preprocessor import ImagePreprocessor
     from services.ingestion.pipeline import IngestionService
@@ -39,19 +37,30 @@ async def lifespan(app: FastAPI):
     from shared.clients.embedding import EmbeddingClient
     from shared.clients.vlm import VLMClient
     from shared.config import Settings
-    from shared.qdrant.repository import QdrantRepository
-    from shared.qdrant.resolver import CollectionResolver
+    from shared.qdrant import factory
     from shared.taxonomy.mapper import TaxonomyMapper
 
     settings = Settings()
 
-    # Qdrant (エイリアス経由で物理コレクションを解決、Task 5.1 で正式配線)
-    qdrant_client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
-    resolver = CollectionResolver(client=qdrant_client, alias_name=settings.qdrant_alias)
-    _qdrant_repo = QdrantRepository(
-        client=qdrant_client, resolver=resolver, vector_dim=settings.vector_dim
-    )
+    # Qdrant: ファクトリで client + resolver + repository をまとめて構築
+    _, resolver, _qdrant_repo = factory.build_repository(settings)
     _qdrant_repo.ensure_collection(settings.qdrant_collection)
+
+    # Req 1.2: エイリアスが未定義なら起動失敗。
+    # 運用者は `reindex init-alias` で先にエイリアスを作成する必要がある。
+    if not resolver.exists():
+        logger.critical(
+            "alias not defined in Qdrant; aborting startup",
+            extra={
+                "event": "search.alias.unresolved",
+                "alias": resolver.alias_name,
+            },
+        )
+        raise RuntimeError(
+            f"alias '{resolver.alias_name}' is not defined in Qdrant. "
+            "Bootstrap it via `python -m services.ingestion.reindex init-alias` "
+            "before starting the search service."
+        )
 
     # Clients
     _embedding_client = EmbeddingClient(settings=settings)

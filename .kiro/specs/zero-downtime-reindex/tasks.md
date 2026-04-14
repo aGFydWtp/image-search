@@ -71,7 +71,7 @@
 
 ## 5. 検索サービス配線
 
-- [ ] 5.1 lifespan を新 API に合わせて書き換え
+- [x] 5.1 lifespan を新 API に合わせて書き換え
   - tests: `tests/test_e2e.py` / `tests/test_integration.py` を更新し、エイリアスが存在しない状態で起動した場合にエラー終了することを検証（`AliasNotFoundError`）
   - impl: `services/search/app.py` の lifespan で `shared/qdrant/factory.build_repository` を使い、`CollectionResolver.exists()` チェックを追加
   - _Requirements: 1.1, 1.2_
