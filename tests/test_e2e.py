@@ -75,13 +75,34 @@ def e2e_setup():
     from shared.clients.vlm import VLMClient
     from shared.config import Settings
     from shared.qdrant.repository import QdrantRepository
+    from shared.qdrant.resolver import CollectionResolver
     from shared.taxonomy.mapper import TaxonomyMapper
 
-    settings = Settings(qdrant_collection="e2e_test_artworks")
+    settings = Settings(
+        qdrant_collection="e2e_test_artworks",
+        qdrant_alias="e2e_test_artworks_alias",
+    )
+
+    from qdrant_client.models import CreateAlias, CreateAliasOperation
 
     qdrant_client = QdrantClient(host="localhost", port=6333)
-    qdrant_repo = QdrantRepository(client=qdrant_client, settings=settings)
-    qdrant_repo.ensure_collection()
+    resolver = CollectionResolver(client=qdrant_client, alias_name=settings.qdrant_alias)
+    qdrant_repo = QdrantRepository(
+        client=qdrant_client, resolver=resolver, vector_dim=settings.vector_dim
+    )
+    qdrant_repo.ensure_collection(settings.qdrant_collection)
+    existing_aliases = {a.alias_name for a in qdrant_client.get_aliases().aliases}
+    if settings.qdrant_alias not in existing_aliases:
+        qdrant_client.update_collection_aliases(
+            change_aliases_operations=[
+                CreateAliasOperation(
+                    create_alias=CreateAlias(
+                        alias_name=settings.qdrant_alias,
+                        collection_name=settings.qdrant_collection,
+                    )
+                )
+            ]
+        )
 
     vlm = VLMClient(settings=settings)
     embedding = EmbeddingClient(settings=settings)

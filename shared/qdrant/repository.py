@@ -1,4 +1,9 @@
-"""QdrantRepository: Qdrantコレクション管理・CRUD・検索操作。"""
+"""QdrantRepository: CRUD / 検索操作をエイリアス解決経由で行う。
+
+Read 経路は :class:`CollectionResolver` に委譲して毎リクエストで物理コレクション名を
+解決し、切替にプロセス再起動なしで追従する。Write 経路は明示物理名指定 (再インデックス)
+と Resolver 経由 (差分 ingestion) の両方をサポートする。
+"""
 
 import hashlib
 import logging
@@ -16,8 +21,8 @@ from qdrant_client.models import (
     VectorParams,
 )
 
-from shared.config import Settings
 from shared.models.artwork import ArtworkPayload
+from shared.qdrant.resolver import CollectionResolver
 
 logger = logging.getLogger(__name__)
 
@@ -49,41 +54,52 @@ def _artwork_id_to_point_id(artwork_id: str) -> int:
 
 
 class QdrantRepository:
-    """Qdrant artworks_v1コレクションのCRUD・検索操作を集約する。"""
+    """エイリアス経由で Qdrant を操作するリポジトリ。"""
 
-    def __init__(self, client: QdrantClient, settings: Settings) -> None:
+    def __init__(
+        self,
+        client: QdrantClient,
+        resolver: CollectionResolver,
+        vector_dim: int,
+    ) -> None:
         self._client = client
-        self._collection = settings.qdrant_collection
-        self._vector_dim = settings.vector_dim
+        self._resolver = resolver
+        self._vector_dim = vector_dim
 
-    def ensure_collection(self) -> None:
-        """コレクションが存在しなければ作成し、payload indexを設定する。"""
-        if self._client.collection_exists(collection_name=self._collection):
-            logger.info("Collection %s already exists, skipping creation", self._collection)
+    def ensure_collection(self, physical_name: str) -> None:
+        """指定された物理コレクションが無ければ作成し、payload index を設定する。"""
+        if self._client.collection_exists(collection_name=physical_name):
+            logger.info(
+                "Collection %s already exists, skipping creation", physical_name
+            )
             return
 
         self._client.create_collection(
-            collection_name=self._collection,
+            collection_name=physical_name,
             vectors_config={
-                "image_semantic": VectorParams(size=self._vector_dim, distance=Distance.COSINE),
-                "text_semantic": VectorParams(size=self._vector_dim, distance=Distance.COSINE),
+                "image_semantic": VectorParams(
+                    size=self._vector_dim, distance=Distance.COSINE
+                ),
+                "text_semantic": VectorParams(
+                    size=self._vector_dim, distance=Distance.COSINE
+                ),
             },
         )
-        logger.info("Created collection %s", self._collection)
+        logger.info("Created collection %s", physical_name)
 
         for tag_field in ("mood_tags", "motif_tags", "color_tags", "freeform_keywords"):
             self._client.create_payload_index(
-                collection_name=self._collection,
+                collection_name=physical_name,
                 field_name=tag_field,
                 field_schema=PayloadSchemaType.KEYWORD,
             )
 
         self._client.create_payload_index(
-            collection_name=self._collection,
+            collection_name=physical_name,
             field_name="brightness_score",
             field_schema=PayloadSchemaType.FLOAT,
         )
-        logger.info("Created payload indexes for %s", self._collection)
+        logger.info("Created payload indexes for %s", physical_name)
 
     def upsert_artwork(
         self,
@@ -91,13 +107,23 @@ class QdrantRepository:
         image_vector: list[float],
         text_vector: list[float],
         payload: ArtworkPayload,
+        target_collection: str | None = None,
     ) -> None:
-        """アートワークをQdrantにupsertする。"""
+        """アートワークを upsert する。
+
+        ``target_collection`` が与えられればその物理コレクションへ、
+        ``None`` なら Resolver が返す現在のエイリアスターゲットへ書き込む。
+        """
+        collection = (
+            target_collection
+            if target_collection is not None
+            else self._resolver.resolve()
+        )
         point_id = _artwork_id_to_point_id(artwork_id)
         payload_dict = payload.model_dump(mode="json")
 
         self._client.upsert(
-            collection_name=self._collection,
+            collection_name=collection,
             points=[
                 PointStruct(
                     id=point_id,
@@ -109,13 +135,19 @@ class QdrantRepository:
                 )
             ],
         )
-        logger.info("Upserted artwork %s (point_id=%d)", artwork_id, point_id)
+        logger.info(
+            "Upserted artwork %s (point_id=%d) into %s",
+            artwork_id,
+            point_id,
+            collection,
+        )
 
     def exists(self, artwork_id: str) -> bool:
-        """artwork_idがコレクション内に存在するか確認する。"""
+        """artwork_id が現在のエイリアスターゲットに存在するか確認する。"""
+        collection = self._resolver.resolve()
         point_id = _artwork_id_to_point_id(artwork_id)
         results = self._client.retrieve(
-            collection_name=self._collection,
+            collection_name=collection,
             ids=[point_id],
             with_payload=False,
             with_vectors=False,
@@ -128,11 +160,12 @@ class QdrantRepository:
         filters: SearchFilters | None,
         limit: int,
     ) -> list[SearchResult]:
-        """prefilter + vector searchを実行する。"""
+        """prefilter + vector search を現在のエイリアスターゲットに対して実行する。"""
+        collection = self._resolver.resolve()
         query_filter = self._build_filter(filters) if filters else None
 
         response = self._client.query_points(
-            collection_name=self._collection,
+            collection_name=collection,
             query=query_vector,
             using="text_semantic",
             query_filter=query_filter,
@@ -152,8 +185,18 @@ class QdrantRepository:
             for point in response.points
         ]
 
+    def count(self, physical_name: str | None = None) -> int:
+        """指定物理名 (None なら Resolver 経由) のポイント件数を正確に返す。
+
+        検証ゲートで新旧コレクションの件数比を計算する用途。
+        """
+        collection = (
+            physical_name if physical_name is not None else self._resolver.resolve()
+        )
+        result = self._client.count(collection_name=collection, exact=True)
+        return result.count
+
     def _build_filter(self, filters: SearchFilters) -> Filter | None:
-        """SearchFiltersからQdrant Filterを構築する。"""
         conditions = []
 
         if filters.motif_tags:

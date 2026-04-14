@@ -11,6 +11,7 @@ from shared.clients.embedding import EmbeddingClient
 from shared.clients.vlm import VLMClient
 from shared.config import Settings
 from shared.qdrant.repository import QdrantRepository
+from shared.qdrant.resolver import CollectionResolver
 from shared.taxonomy.mapper import TaxonomyMapper
 
 from services.ingestion.batch import BatchLogger
@@ -38,7 +39,13 @@ class BatchRunner:
         vlm_client = VLMClient(settings=settings)
         embedding_client = EmbeddingClient(settings=settings)
         qdrant_client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
-        self._qdrant = QdrantRepository(client=qdrant_client, settings=settings)
+        resolver = CollectionResolver(
+            client=qdrant_client, alias_name=settings.qdrant_alias
+        )
+        self._qdrant = QdrantRepository(
+            client=qdrant_client, resolver=resolver, vector_dim=settings.vector_dim
+        )
+        self._physical_collection = settings.qdrant_collection
         preprocessor = ImagePreprocessor()
         color_extractor = ColorExtractor()
         taxonomy_mapper = TaxonomyMapper()
@@ -55,7 +62,7 @@ class BatchRunner:
 
     def execute(self) -> dict[str, Any]:
         """バッチインジェスションを実行し、サマリーを返す。"""
-        self._qdrant.ensure_collection()
+        self._qdrant.ensure_collection(self._physical_collection)
         blob_paths = self._firebase.list_images(prefix=self._prefix)
         self._batch_logger.start(len(blob_paths))
 

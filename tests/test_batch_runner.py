@@ -81,6 +81,7 @@ class TestBatchRunnerExecute:
         runner._ingestion = ingestion_service
         runner._qdrant = qdrant_repo
         runner._prefix = "generated_arts/"
+        runner._physical_collection = "artworks_v1"
         runner._batch_logger = BatchLogger()
 
         return runner, firebase_client, ingestion_service

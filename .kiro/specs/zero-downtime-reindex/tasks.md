@@ -51,7 +51,7 @@
 
 ## 4. QdrantRepository 改修
 
-- [ ] 4.1 Repository をエイリアス解決対応に変更
+- [x] 4.1 Repository をエイリアス解決対応に変更
   - tests: 既存 `tests/test_qdrant_repository.py` を改修
     - 読み取り (`search`/`exists`/`count`) が毎回 Resolver を経由する
     - 書き込み (`upsert_artwork`) は `target_collection=None` で Resolver 経由、明示指定でその物理名に書く

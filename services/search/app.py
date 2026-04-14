@@ -40,14 +40,18 @@ async def lifespan(app: FastAPI):
     from shared.clients.vlm import VLMClient
     from shared.config import Settings
     from shared.qdrant.repository import QdrantRepository
+    from shared.qdrant.resolver import CollectionResolver
     from shared.taxonomy.mapper import TaxonomyMapper
 
     settings = Settings()
 
-    # Qdrant
+    # Qdrant (エイリアス経由で物理コレクションを解決、Task 5.1 で正式配線)
     qdrant_client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
-    _qdrant_repo = QdrantRepository(client=qdrant_client, settings=settings)
-    _qdrant_repo.ensure_collection()
+    resolver = CollectionResolver(client=qdrant_client, alias_name=settings.qdrant_alias)
+    _qdrant_repo = QdrantRepository(
+        client=qdrant_client, resolver=resolver, vector_dim=settings.vector_dim
+    )
+    _qdrant_repo.ensure_collection(settings.qdrant_collection)
 
     # Clients
     _embedding_client = EmbeddingClient(settings=settings)
