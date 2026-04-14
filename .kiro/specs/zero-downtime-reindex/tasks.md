@@ -130,7 +130,7 @@
 
 ## 8. 差分インジェスション側の整合
 
-- [ ] 8.1 差分 upsert が現行エイリアス対象に書き込む
+- [x] 8.1 差分 upsert が現行エイリアス対象に書き込む
   - tests: `tests/test_batch_runner.py` / `tests/test_integration.py` に追加
     - 差分 ingestion が `upsert_artwork(target_collection=None)` を使い Resolver 経由になる
     - 指定物理名とエイリアス先が不一致の場合 `event=ingestion.alias.mismatch` の WARN が 1 回出る

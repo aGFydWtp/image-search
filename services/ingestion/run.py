@@ -12,7 +12,7 @@ from shared.clients.vlm import VLMClient
 from shared.config import Settings
 from shared.logging import configure_logging
 from shared.qdrant.repository import QdrantRepository
-from shared.qdrant.resolver import CollectionResolver
+from shared.qdrant.resolver import AliasNotFoundError, CollectionResolver
 from shared.taxonomy.mapper import TaxonomyMapper
 
 from services.ingestion.batch import BatchLogger
@@ -47,6 +47,7 @@ class BatchRunner:
             client=qdrant_client, resolver=resolver, vector_dim=settings.vector_dim
         )
         self._physical_collection = settings.qdrant_collection
+        self._warn_if_alias_target_differs(resolver, settings)
         preprocessor = ImagePreprocessor()
         color_extractor = ColorExtractor()
         taxonomy_mapper = TaxonomyMapper()
@@ -60,6 +61,33 @@ class BatchRunner:
             taxonomy_mapper=taxonomy_mapper,
         )
         self._batch_logger = BatchLogger()
+
+    @staticmethod
+    def _warn_if_alias_target_differs(
+        resolver: CollectionResolver, settings: Settings
+    ) -> None:
+        """差分 ingestion の投入先 (alias) が Settings.qdrant_collection と
+        食い違う場合、1 回だけ WARNING を残す。
+
+        切替直後に env が古いまま残っているケースで運用者が気付けるようにする。
+        エイリアス未定義 (初回導入前) は警告しない。
+        """
+        try:
+            alias_target = resolver.resolve()
+        except AliasNotFoundError:
+            return
+        if alias_target == settings.qdrant_collection:
+            return
+        logger.warning(
+            "QDRANT_COLLECTION env differs from current alias target; "
+            "diff ingestion still writes to the alias target via resolver",
+            extra={
+                "event": "ingestion.alias.mismatch",
+                "alias": settings.qdrant_alias,
+                "alias_target": alias_target,
+                "configured_collection": settings.qdrant_collection,
+            },
+        )
 
     def execute(self) -> dict[str, Any]:
         """バッチインジェスションを実行し、サマリーを返す。"""

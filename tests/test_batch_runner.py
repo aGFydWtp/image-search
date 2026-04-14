@@ -68,11 +68,105 @@ class TestBatchRunnerInit:
             with patch("services.ingestion.run.FirebaseStorageClient"), \
                  patch("services.ingestion.run.QdrantClient"), \
                  patch("services.ingestion.run.QdrantRepository"), \
+                 patch("services.ingestion.run.CollectionResolver"), \
                  patch("services.ingestion.run.VLMClient"), \
                  patch("services.ingestion.run.EmbeddingClient"):
                 BatchRunner()
 
             mock_configure.assert_called_once_with(mock_settings)
+
+
+class TestBatchRunnerAliasMismatch:
+    """差分 ingestion 起動時に alias 先と qdrant_collection の不一致を検知する。"""
+
+    def _build(
+        self,
+        *,
+        alias_target: str | None,
+        qdrant_collection: str = "artworks_v1",
+    ) -> MagicMock:
+        settings = MagicMock()
+        settings.firebase_storage_prefix = "generated_arts/"
+        settings.vector_dim = 1152
+        settings.qdrant_host = "localhost"
+        settings.qdrant_port = 6333
+        settings.qdrant_alias = "artworks_current"
+        settings.qdrant_collection = qdrant_collection
+
+        resolver = MagicMock()
+        if alias_target is None:
+            from shared.qdrant.resolver import AliasNotFoundError
+
+            resolver.resolve.side_effect = AliasNotFoundError("no alias yet")
+        else:
+            resolver.resolve.return_value = alias_target
+        return settings, resolver
+
+    def _run_init(
+        self, settings: MagicMock, resolver: MagicMock
+    ) -> None:
+        with patch("services.ingestion.run.Settings", return_value=settings), \
+             patch("services.ingestion.run.configure_logging"), \
+             patch("services.ingestion.run.FirebaseStorageClient"), \
+             patch("services.ingestion.run.QdrantClient"), \
+             patch("services.ingestion.run.QdrantRepository"), \
+             patch(
+                 "services.ingestion.run.CollectionResolver",
+                 return_value=resolver,
+             ), \
+             patch("services.ingestion.run.VLMClient"), \
+             patch("services.ingestion.run.EmbeddingClient"):
+            BatchRunner()
+
+    def test_warns_once_when_alias_target_differs_from_qdrant_collection(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        settings, resolver = self._build(
+            alias_target="artworks_v2", qdrant_collection="artworks_v1"
+        )
+        caplog.set_level("WARNING")
+        self._run_init(settings, resolver)
+
+        mismatch_records = [
+            r
+            for r in caplog.records
+            if getattr(r, "event", None) == "ingestion.alias.mismatch"
+        ]
+        assert len(mismatch_records) == 1
+        rec = mismatch_records[0]
+        assert getattr(rec, "alias_target", None) == "artworks_v2"
+        assert getattr(rec, "configured_collection", None) == "artworks_v1"
+
+    def test_does_not_warn_when_alias_matches(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        settings, resolver = self._build(
+            alias_target="artworks_v1", qdrant_collection="artworks_v1"
+        )
+        caplog.set_level("WARNING")
+        self._run_init(settings, resolver)
+
+        mismatch_records = [
+            r
+            for r in caplog.records
+            if getattr(r, "event", None) == "ingestion.alias.mismatch"
+        ]
+        assert mismatch_records == []
+
+    def test_does_not_warn_when_alias_undefined(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """初回導入時などエイリアス未作成は警告しない (init-alias で立ち上がる前)。"""
+        settings, resolver = self._build(alias_target=None)
+        caplog.set_level("WARNING")
+        self._run_init(settings, resolver)
+
+        mismatch_records = [
+            r
+            for r in caplog.records
+            if getattr(r, "event", None) == "ingestion.alias.mismatch"
+        ]
+        assert mismatch_records == []
 
 
 class TestBatchRunnerExecute:
