@@ -12,7 +12,7 @@
 
 ## 2. 構造化ログ基盤 (StructuredLogger)
 
-- [ ] 2.1 Cloud Logging 互換 JSON フォーマッタを実装 (P)
+- [x] 2.1 Cloud Logging 互換 JSON フォーマッタを実装 (P)
   - tests: `tests/test_structured_logger.py` を新設し以下を検証
     - `severity` が `DEBUG/INFO/NOTICE/WARNING/ERROR/CRITICAL` に正しくマップされる
     - `logging.googleapis.com/labels` に `service`/`env`/`event` が含まれる
