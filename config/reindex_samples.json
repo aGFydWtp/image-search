@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "queries": [
+    {"label": "mood_calm_landscape", "text": "やさしい雰囲気の風景"},
+    {"label": "color_green_gold", "text": "緑と金が入っている作品"},
+    {"label": "warm_sunset", "text": "温かい夕焼け"},
+    {"label": "dark_forest", "text": "暗い森"},
+    {"label": "abstract_pattern", "text": "抽象的な模様"}
+  ]
+}

@@ -97,7 +97,7 @@
   - impl: `shared/qdrant/validation.py`（新設）`ValidationGate`, `ValidationReport`, `CheckResult`
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 6.2 サンプルクエリ定義と読み込み (P)
+- [x] 6.2 サンプルクエリ定義と読み込み (P)
   - tests: `tests/test_reindex_samples.py` を新設
     - 正常 JSON を読める
     - 不正 JSON／ファイル不在は `SampleQueriesError` を送出
