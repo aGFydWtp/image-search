@@ -40,6 +40,26 @@ _TEXTURE_EXPANSIONS: dict[str, str] = {
     "ざらざら": "rough textured",
     "なめらか": "smooth",
     "粗い": "rough textured",
+    # 「きらきら」系の擬態語・動詞は brightness ではなく
+    # sparkle/glitter の質感として SigLIP2 にヒントを渡す。
+    # 抽象語 (sparkling/glittering) だけだと光沢生地と混同されるため、
+    # SigLIP2 が画像-キャプション学習で接していそうな具体名詞
+    # (stars, jewels, gems, fireworks 等) を併記して照準を絞る。
+    "光り輝く": "shining radiant glowing light",
+    "きらきら": (
+        "sparkling glittering stars jewels gems "
+        "twinkling lights points of light on dark background"
+    ),
+    "キラキラ": (
+        "sparkling glittering stars jewels gems "
+        "twinkling lights points of light on dark background"
+    ),
+    "煌びやか": "sparkling shimmering ornate jewels gold ornament",
+    "煌めき": "sparkling shimmering stars jewels twinkling",
+    "煌めく": "sparkling shimmering stars jewels twinkling",
+    "輝く": "shining radiant glowing star sun light",
+    "眩しい": "bright dazzling sunlight glare",
+    "まぶしい": "bright dazzling sunlight glare",
 }
 
 
@@ -67,7 +87,9 @@ def _load_motif_map() -> list[tuple[str, str]]:
     return pairs
 
 # 明るさ関連の日本語表現 → brightness_min値
-_BRIGHTNESS_BRIGHT: list[str] = ["明るい", "明るく", "鮮やか", "光り輝く", "きらきら", "キラキラ", "輝く", "眩しい", "まぶしい", "煌めく", "煌めき", "煌びやか"]
+# 「画像全体が明るい」を意味する語のみ。点状の光・煌めき表現
+# (きらきら/輝く/煌めく/眩しい等) は質感寄りなので _TEXTURE_EXPANSIONS 側で扱う。
+_BRIGHTNESS_BRIGHT: list[str] = ["明るい", "明るく", "鮮やか"]
 _BRIGHTNESS_DARK: list[str] = ["暗い", "暗く", "暗め", "ダーク", "闇"]
 
 

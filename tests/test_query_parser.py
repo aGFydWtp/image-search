@@ -213,6 +213,25 @@ class TestTextureExpansion:
         assert "matte surface" in result.semantic_query
         assert "glossy" not in result.semantic_query
 
+    def test_sparkle_terms_become_texture_not_brightness(self) -> None:
+        """擬態語「きらきら」等は brightness ではなく sparkle 質感として
+        semantic_query に英語ヒントを足し、brightness_min は発火しない。"""
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        for jp, hint in [
+            ("きらきら", "sparkling"),
+            ("キラキラ", "sparkling"),
+            ("輝く星", "shining"),
+            ("煌めく夜", "sparkling"),
+            ("眩しい朝日", "dazzling"),
+        ]:
+            result = parser.parse(jp)
+            assert hint in result.semantic_query, f"{jp} → expected '{hint}' hint"
+            assert result.boosts.brightness_min is None, (
+                f"{jp} should not trigger brightness_min filter"
+            )
+
 
 class TestBrightnessBoost:
     """明るさ関連表現 → brightness boost変換テスト。"""
