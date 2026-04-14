@@ -402,12 +402,14 @@ class ValidationReport:
 
 | # | H2 見出し | 対応 CLI | 主なイベントキー |
 |---|-----------|----------|------------------|
-| 1 | 新規再インデックスの実行 | `reindex run --target-version vN` | `reindex.started` → `reindex.progress` → `reindex.validation.passed` → `reindex.alias.swap` |
-| 2 | ドライランで切替計画を確認 | `reindex run ... --dry-run` | `reindex.validation.*`（切替なし） |
-| 3 | ロールバック | `reindex rollback --to vN-1` | `reindex.rollback` |
-| 4 | 旧コレクションの安全な削除 | `reindex drop-collection artworks_vN-1` | `reindex.collection.dropped` |
-| 5 | 検索サービスの健全性確認 | `curl .../readyz` | `search.alias.unresolved`（異常時） |
-| 6 | 障害時の判断フロー | - | 全 `*.failed` 系 |
+| 1 | 初期エイリアス作成 (初回セットアップのみ) | `reindex init-alias` | `reindex.alias.initialized` / `reindex.alias.init_skipped` |
+| 2 | 新規再インデックスの実行 | `reindex run --target-version vN` | `reindex.started` → `reindex.progress` → `reindex.validation.passed` → `reindex.alias.swap` |
+| 3 | ドライランで切替計画を確認 | `reindex run ... --dry-run` | `reindex.validation.*`（切替なし） |
+| 4 | 再インデックス期間中のキャッチアップ | `reindex catchup --source X --target Y` | `reindex.catchup.*` |
+| 5 | ロールバック | `reindex rollback --to vN-1` | `reindex.rollback` |
+| 6 | 旧コレクションの安全な削除 | `reindex drop-collection artworks_vN-1` | `reindex.collection.dropped` |
+| 7 | 検索サービスの健全性確認 | `curl .../readyz` | `search.alias.unresolved`（異常時） |
+| 8 | 障害時の判断フロー | - | 全 `*.failed` 系 |
 
 **Discoverability 要件 (Req 9.4)**:
 - `CLAUDE.md` に `## Operational Runbooks` セクションを追加し、`docs/runbooks/reindex.md` への相対リンクを 1 行で掲載
