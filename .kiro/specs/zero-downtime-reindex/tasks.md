@@ -76,7 +76,7 @@
   - impl: `services/search/app.py` の lifespan で `shared/qdrant/factory.build_repository` を使い、`CollectionResolver.exists()` チェックを追加
   - _Requirements: 1.1, 1.2_
 
-- [ ] 5.2 `/healthz` と `/readyz` を実装
+- [x] 5.2 `/healthz` と `/readyz` を実装
   - tests: `tests/test_search_app.py` に追加
     - `/healthz` は依存不問で 200 `{"status":"ok"}`
     - `/readyz` は Resolver が解決できかつ count 成功時に 200 `{"alias","collection","points_count"}`

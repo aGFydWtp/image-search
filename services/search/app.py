@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 _query_parser = None
 _embedding_client = None
 _qdrant_repo = None
+_resolver = None
 _reranker = None
 _ingestion_service = None
 _index_http_client = None
@@ -26,7 +27,7 @@ _index_http_client = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """アプリ起動時に全依存を初期化する。"""
-    global _query_parser, _embedding_client, _qdrant_repo, _reranker
+    global _query_parser, _embedding_client, _qdrant_repo, _resolver, _reranker
     global _ingestion_service, _index_http_client
 
     from services.ingestion.color_extractor import ColorExtractor
@@ -43,21 +44,21 @@ async def lifespan(app: FastAPI):
     settings = Settings()
 
     # Qdrant: ファクトリで client + resolver + repository をまとめて構築
-    _, resolver, _qdrant_repo = factory.build_repository(settings)
+    _, _resolver, _qdrant_repo = factory.build_repository(settings)
     _qdrant_repo.ensure_collection(settings.qdrant_collection)
 
     # Req 1.2: エイリアスが未定義なら起動失敗。
     # 運用者は `reindex init-alias` で先にエイリアスを作成する必要がある。
-    if not resolver.exists():
+    if not _resolver.exists():
         logger.critical(
             "alias not defined in Qdrant; aborting startup",
             extra={
                 "event": "search.alias.unresolved",
-                "alias": resolver.alias_name,
+                "alias": _resolver.alias_name,
             },
         )
         raise RuntimeError(
-            f"alias '{resolver.alias_name}' is not defined in Qdrant. "
+            f"alias '{_resolver.alias_name}' is not defined in Qdrant. "
             "Bootstrap it via `python -m services.ingestion.reindex init-alias` "
             "before starting the search service."
         )
@@ -94,9 +95,46 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Image Search API", version="0.1.0", lifespan=lifespan)
 
 
-@app.get("/health")
-def health() -> dict[str, str]:
+@app.get("/healthz")
+def healthz() -> dict[str, str]:
+    """Liveness プローブ: プロセス生存のみを返す (依存不問)。"""
     return {"status": "ok"}
+
+
+def _readyz_payload() -> dict[str, object]:
+    """/readyz 応答の本体。依存が揃っていない場合は 503 を送出する。"""
+    if _resolver is None or _qdrant_repo is None:
+        raise HTTPException(status_code=503, detail="Not ready")
+    try:
+        collection = _resolver.resolve()
+        points_count = _qdrant_repo.count()
+    except Exception as exc:
+        logger.error(
+            "readiness check failed",
+            extra={
+                "event": "search.readiness.failed",
+                "alias": _resolver.alias_name,
+                "error_type": type(exc).__name__,
+            },
+        )
+        raise HTTPException(status_code=503, detail="Not ready") from exc
+    return {
+        "alias": _resolver.alias_name,
+        "collection": collection,
+        "points_count": points_count,
+    }
+
+
+@app.get("/readyz")
+def readyz() -> dict[str, object]:
+    """Readiness プローブ: エイリアス解決 + コレクション件数取得に成功したとき 200。"""
+    return _readyz_payload()
+
+
+@app.get("/health")
+def health() -> dict[str, object]:
+    """後方互換: 既存の /health は /readyz と同じ応答を返す。"""
+    return _readyz_payload()
 
 
 @app.post("/api/artworks/search", response_model=SearchResponse)
