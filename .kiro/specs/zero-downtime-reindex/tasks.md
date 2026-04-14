@@ -118,7 +118,7 @@
   - impl: `services/ingestion/reindex.py`（新設）に `ReindexOrchestrator`
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 4.1-4.4, 7.2_
 
-- [ ] 7.2 CLI エントリポイントを実装
+- [x] 7.2 CLI エントリポイントを実装
   - tests: `tests/test_reindex_cli.py` を新設
     - `reindex run --target-version v2` が Orchestrator を呼び、成功で exit 0、失敗で非ゼロ
     - `--dry-run`/`--skip-validation`/`--force-recreate`/`--sample-ratio` の各フラグが伝搬
