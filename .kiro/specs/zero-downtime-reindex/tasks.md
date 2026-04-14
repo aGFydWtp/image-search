@@ -106,7 +106,7 @@
 
 ## 7. ReindexOrchestrator と CLI
 
-- [ ] 7.1 `ReindexOrchestrator` を実装
+- [x] 7.1 `ReindexOrchestrator` を実装
   - tests: `tests/test_reindex_orchestrator.py` を新設
     - 新コレクション作成 → 投入 → 検証 → swap の順に呼ぶ
     - 既存同名コレクションに対して既定では `CollectionExistsError`、`force_recreate=True` で削除再作成

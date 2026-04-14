@@ -338,8 +338,11 @@ class ValidationReport:
 | event | 出力箇所 | severity | 意味 |
 |-------|----------|----------|------|
 | `reindex.started` | ReindexOrchestrator | INFO | 再インデックス開始 |
-| `reindex.progress` | ReindexOrchestrator | INFO | 進捗（30 秒ごと） |
+| `reindex.progress` | ReindexOrchestrator | INFO | 進捗（一定件数ごと） |
 | `reindex.collection.created` | ReindexOrchestrator | INFO | 新コレクション作成完了 |
+| `reindex.collection.recreated` | ReindexOrchestrator | INFO | `--force-recreate` で既存コレクションを削除・再作成 |
+| `reindex.dry_run` | ReindexOrchestrator | INFO | `--dry-run` で切替を省略 |
+| `reindex.aborted` | ReindexOrchestrator | ERROR | 検証失敗により切替中止 |
 | `reindex.validation.passed` | ValidationGate | NOTICE | 検証合格 |
 | `reindex.validation.failed` | ValidationGate | ERROR | 検証失敗（切替中止） |
 | `reindex.validation.skipped` | ValidationGate | WARNING | `--skip-validation` 実行 |
@@ -349,6 +352,7 @@ class ValidationReport:
 | `reindex.collection.dropped` | AliasAdmin | NOTICE | 旧コレクション削除 |
 | `ingestion.alias.mismatch` | QdrantRepository / run.py | WARNING | 差分 ingestion の投入先がエイリアス対象と不一致 |
 | `search.alias.unresolved` | CollectionResolver | CRITICAL | エイリアス未定義で readiness NG |
+| `search.readiness.failed` | search.app | ERROR | `/readyz` が resolver/count 失敗で 503 |
 
 #### Settings（改修）
 
