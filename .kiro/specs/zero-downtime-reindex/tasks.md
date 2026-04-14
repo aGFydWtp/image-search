@@ -186,10 +186,10 @@
 
 ## 12. ドキュメント最終反映
 
-- [ ] 12.1 README の運用章を更新
+- [x] 12.1 README の運用章を更新
   - impl: 初回カットオーバー手順（停止許容）、日常の再インデックス手順、Runbook へのリンクを追加
   - _Requirements: 9.4_
 
-- [ ] 12.2 design.md / Runbook の整合チェック（セルフレビュー）
+- [x] 12.2 design.md / Runbook の整合チェック（セルフレビュー）
   - impl: design.md のイベントキー一覧と Runbook の `期待ログ` が 1 対 1 で一致することを確認
   - _Requirements: 9.6_

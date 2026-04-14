@@ -354,7 +354,12 @@ class ValidationReport:
 | `reindex.alias.swap` | AliasAdmin | NOTICE | 切替成功 |
 | `reindex.alias.swap.failed` | AliasAdmin | ERROR | 切替失敗 |
 | `reindex.rollback` | AliasAdmin | NOTICE | ロールバック成功 |
+| `reindex.rollback.failed` | CLI | ERROR | ロールバック対象コレクション不在 |
+| `reindex.alias.initialized` | CLI | INFO | `init-alias` でエイリアス新規作成 |
+| `reindex.alias.init_skipped` | CLI | INFO | `init-alias` 実行時に既存で no-op |
 | `reindex.collection.dropped` | AliasAdmin | NOTICE | 旧コレクション削除 |
+| `reindex.collection.drop_refused` | CLI | ERROR | 現行ターゲットに対する削除拒否 |
+| `reindex.samples.load_failed` | CLI | ERROR | サンプルクエリ JSON の読み込み失敗 |
 | `ingestion.alias.mismatch` | QdrantRepository / run.py | WARNING | 差分 ingestion の投入先がエイリアス対象と不一致 |
 | `search.alias.unresolved` | CollectionResolver | CRITICAL | エイリアス未定義で readiness NG |
 | `search.readiness.failed` | search.app | ERROR | `/readyz` が resolver/count 失敗で 503 |
