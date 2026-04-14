@@ -19,6 +19,8 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import (
     CreateAlias,
     CreateAliasOperation,
+    DeleteAlias,
+    DeleteAliasOperation,
     Distance,
     PointStruct,
     VectorParams,
@@ -349,3 +351,114 @@ class TestReindexOrchestratorHappyPath:
         assert result.swapped is True
         assert result.processed_count == 3
         assert admin.current_target(ALIAS) == COLL_B
+
+
+class TestReadyzResolvesAliasChanges:
+    """/readyz が alias の実在状態と連動する (Req 7.1 / 8.5)。"""
+
+    def test_readyz_toggles_with_alias_delete_and_recreate(
+        self, client: QdrantClient
+    ) -> None:
+        """/readyz と /healthz の alias 連動挙動を 1 テスト内で検証する。
+
+        Note:
+            同一 FastAPI TestClient を複数テストで再入すると anyio の
+            lifespan タスク管理で RecursionError を起こすため、readiness の
+            4 フェーズと liveness 非依存検証を単一テストにまとめる。失敗時の
+            切り分けが楽になるよう、各 assertion にフェーズ識別メッセージを
+            付ける。
+
+        Phases:
+            1. 初期 /readyz 200 + alias/collection の正しさ
+            2. alias 削除 → /readyz 503
+            3. alias 再作成 → /readyz 200
+            4. alias 再削除中でも /healthz 200 (liveness 非依存)
+        """
+        from unittest.mock import MagicMock, patch
+
+        from fastapi.testclient import TestClient
+
+        # Qdrant 側: コレクション + alias を用意
+        _create_collection(client, COLL_A)
+        _upsert(client, COLL_A, "art-a1", "from A")
+        _create_alias(client, ALIAS, COLL_A)
+
+        # app の依存を差し替え: 実 Qdrant 接続を使い、その他は no-op
+        from shared.qdrant import factory as real_factory
+
+        # patch 対象と衝突しないよう、元関数への参照をローカルに捕捉しておく
+        _original_build = real_factory.build_repository
+
+        # qdrant_alias を ALIAS に上書きした Settings でファクトリを呼ぶ
+        def _build(_settings):
+            mock_settings = MagicMock()
+            mock_settings.qdrant_host = QDRANT_HOST
+            mock_settings.qdrant_port = QDRANT_PORT
+            mock_settings.qdrant_alias = ALIAS
+            mock_settings.qdrant_api_key = None
+            mock_settings.vector_dim = VECTOR_DIM
+            return _original_build(mock_settings)
+
+        with patch(
+            "shared.qdrant.factory.build_repository", side_effect=_build
+        ), patch(
+            "shared.logging.configure_logging"
+        ):
+            from services.search.app import app
+
+            with TestClient(app) as tc:
+                # --- Phase 1: 初期 /readyz 200 ---
+                r1 = tc.get("/readyz")
+                assert r1.status_code == 200, f"Phase 1 (initial readyz): {r1.text}"
+                body1 = r1.json()
+                assert body1["alias"] == ALIAS, "Phase 1 (alias label)"
+                assert (
+                    body1["collection"] == COLL_A
+                ), f"Phase 1 (collection): {body1!r}"
+
+                # --- Phase 2: alias 削除 → /readyz 503 ---
+                client.update_collection_aliases(
+                    change_aliases_operations=[
+                        DeleteAliasOperation(
+                            delete_alias=DeleteAlias(alias_name=ALIAS)
+                        )
+                    ]
+                )
+                r2 = tc.get("/readyz")
+                assert r2.status_code == 503, (
+                    f"Phase 2 (alias deleted, expected 503): {r2.status_code}"
+                )
+
+                # --- Phase 3: alias 再作成 → /readyz 200 ---
+                client.update_collection_aliases(
+                    change_aliases_operations=[
+                        CreateAliasOperation(
+                            create_alias=CreateAlias(
+                                alias_name=ALIAS, collection_name=COLL_A
+                            )
+                        )
+                    ]
+                )
+                r3 = tc.get("/readyz")
+                assert r3.status_code == 200, (
+                    f"Phase 3 (alias recreated): {r3.text}"
+                )
+                assert (
+                    r3.json()["collection"] == COLL_A
+                ), "Phase 3 (collection after recreate)"
+
+                # --- Phase 4: /healthz は alias 状態非依存で常に 200 ---
+                assert (
+                    tc.get("/healthz").status_code == 200
+                ), "Phase 4a (healthz with alias present)"
+                client.update_collection_aliases(
+                    change_aliases_operations=[
+                        DeleteAliasOperation(
+                            delete_alias=DeleteAlias(alias_name=ALIAS)
+                        )
+                    ]
+                )
+                assert (
+                    tc.get("/healthz").status_code == 200
+                ), "Phase 4b (healthz after alias deleted)"
+

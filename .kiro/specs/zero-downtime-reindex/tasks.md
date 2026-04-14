@@ -179,7 +179,7 @@
     - 現行ターゲット A を `drop-collection` しようとして失敗する
   - _Requirements: 3.1-3.3, 5.1-5.4, 6.1_
 
-- [ ] 11.2 `/readyz` 連動の運用シナリオ
+- [x] 11.2 `/readyz` 連動の運用シナリオ
   - tests: `tests/test_reindex_e2e.py` に追加
     - エイリアスを意図的に削除 → `/readyz` 503、再作成 → 200
   - _Requirements: 7.1, 8.5_
