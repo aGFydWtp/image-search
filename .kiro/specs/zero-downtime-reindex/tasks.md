@@ -64,7 +64,7 @@
     - `count` メソッド新設
   - _Requirements: 1.1, 1.3, 2.4, 6.1, 6.2_
 
-- [ ] 4.2 Repository のファクトリ関数を追加 (P)
+- [x] 4.2 Repository のファクトリ関数を追加 (P)
   - tests: `tests/test_qdrant_factory.py` を新設し、Settings から `Resolver`+`Repository` を生成できることを検証
   - impl: `shared/qdrant/factory.py`（新設）に `build_repository(settings) -> tuple[QdrantClient, CollectionResolver, QdrantRepository]` を用意
   - _Requirements: 1.1, 8.1_
