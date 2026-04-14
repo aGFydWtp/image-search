@@ -343,6 +343,11 @@ class ValidationReport:
 | `reindex.collection.recreated` | ReindexOrchestrator | INFO | `--force-recreate` で既存コレクションを削除・再作成 |
 | `reindex.dry_run` | ReindexOrchestrator | INFO | `--dry-run` で切替を省略 |
 | `reindex.aborted` | ReindexOrchestrator | ERROR | 検証失敗により切替中止 |
+| `reindex.catchup.started` | ReindexOrchestrator | INFO | キャッチアップ開始 |
+| `reindex.catchup.progress` | ReindexOrchestrator | INFO | キャッチアップ進捗 (バッチごと) |
+| `reindex.catchup.completed` | ReindexOrchestrator | INFO | キャッチアップ完了 (`copied_count` 付き) |
+| `reindex.catchup.invalid` | CLI | ERROR | キャッチアップの引数不正 |
+| `reindex.catchup.failed` | CLI | ERROR | キャッチアップの Qdrant 例外 |
 | `reindex.validation.passed` | ValidationGate | NOTICE | 検証合格 |
 | `reindex.validation.failed` | ValidationGate | ERROR | 検証失敗（切替中止） |
 | `reindex.validation.skipped` | ValidationGate | WARNING | `--skip-validation` 実行 |

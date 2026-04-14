@@ -137,7 +137,7 @@
   - impl: `services/ingestion/run.py` / `batch.py` / `pipeline.py` の呼び出し箇所を Resolver 経由に切替
   - _Requirements: 6.1, 6.2, 6.4_
 
-- [ ] 8.2 キャッチアップ投入手順の検証
+- [x] 8.2 キャッチアップ投入手順の検証
   - tests: `tests/test_reindex_catchup.py` を新設し、再インデックス中に入った差分が `reindex run --catchup` 相当の再実行で新コレクションにも反映されることを検証
   - impl: Orchestrator に `catchup=True` モードを追加（`artwork_id` 一覧を旧コレクションから取得 → 新コレクションへ upsert）
   - _Requirements: 6.3_

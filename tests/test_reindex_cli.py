@@ -267,6 +267,103 @@ class TestInitAliasCommand:
         stubs.client.update_collection_aliases.assert_not_called()
 
 
+class TestCatchupCommand:
+    def test_catchup_invokes_orchestrator(self) -> None:
+        stubs = _Stubs()
+        stubs.orchestrator.catchup = MagicMock()
+        code = _patched_main(
+            [
+                "catchup",
+                "--source",
+                "artworks_v1",
+                "--target",
+                "artworks_v2",
+            ],
+            stubs,
+        )
+        assert code == 0
+        stubs.orchestrator.catchup.assert_called_once_with(
+            source_collection="artworks_v1",
+            target_collection="artworks_v2",
+            batch_size=100,
+        )
+
+    def test_catchup_batch_size_is_forwarded(self) -> None:
+        stubs = _Stubs()
+        stubs.orchestrator.catchup = MagicMock()
+        _patched_main(
+            [
+                "catchup",
+                "--source",
+                "artworks_v1",
+                "--target",
+                "artworks_v2",
+                "--batch-size",
+                "50",
+            ],
+            stubs,
+        )
+        assert (
+            stubs.orchestrator.catchup.call_args.kwargs["batch_size"] == 50
+        )
+
+    def test_catchup_rejects_invalid_collection_name(self) -> None:
+        with pytest.raises(SystemExit):
+            cli_main(
+                [
+                    "catchup",
+                    "--source",
+                    "not_prefixed",
+                    "--target",
+                    "artworks_v2",
+                ]
+            )
+
+    def test_catchup_returns_nonzero_on_invalid_args(self) -> None:
+        stubs = _Stubs()
+        stubs.orchestrator.catchup = MagicMock(
+            side_effect=ValueError("source must differ from target")
+        )
+        code = _patched_main(
+            [
+                "catchup",
+                "--source",
+                "artworks_v1",
+                "--target",
+                "artworks_v2",
+            ],
+            stubs,
+        )
+        assert code != 0
+
+    def test_catchup_returns_nonzero_on_qdrant_error(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        stubs = _Stubs()
+        stubs.orchestrator.catchup = MagicMock(
+            side_effect=ConnectionError("qdrant down")
+        )
+        caplog.set_level("ERROR")
+        code = _patched_main(
+            [
+                "catchup",
+                "--source",
+                "artworks_v1",
+                "--target",
+                "artworks_v2",
+            ],
+            stubs,
+        )
+        assert code != 0
+        failed = [
+            r
+            for r in caplog.records
+            if getattr(r, "event", None) == "reindex.catchup.failed"
+        ]
+        assert len(failed) == 1
+        assert getattr(failed[0], "error_type", None) == "ConnectionError"
+
+
 class TestNoSubcommand:
     def test_missing_subcommand_returns_error(
         self, capsys: pytest.CaptureFixture[str]

@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from typing import Callable, Iterable
 
 from qdrant_client import QdrantClient
-from qdrant_client.models import CreateAlias, CreateAliasOperation
+from qdrant_client.models import CreateAlias, CreateAliasOperation, PointStruct
 
 from shared.config import Settings
 from shared.logging import configure_logging
@@ -63,6 +63,15 @@ class ReindexResult:
     validation_report: ValidationReport | None
     swap_result: SwapResult | None
     swapped: bool
+
+
+@dataclass(frozen=True)
+class CatchupResult:
+    """キャッチアップ投入の実行結果。"""
+
+    source_collection: str
+    target_collection: str
+    copied_count: int
 
 
 class ReindexOrchestrator:
@@ -205,6 +214,79 @@ class ReindexOrchestrator:
             },
         )
 
+    def catchup(
+        self,
+        *,
+        source_collection: str,
+        target_collection: str,
+        batch_size: int = 100,
+    ) -> CatchupResult:
+        """``source`` コレクションの全ポイントを ``target`` へ複製する。
+
+        再インデックス中に旧コレクションへ差分 ingestion された artwork を、
+        新コレクションへ反映するためのキャッチアップ投入。``point_id`` が
+        決定論的 (``sha256(artwork_id)``) なので再実行しても重複しない。
+        """
+        if source_collection == target_collection:
+            raise ValueError("source_collection must differ from target_collection")
+        if batch_size <= 0:
+            raise ValueError("batch_size must be positive")
+
+        logger.info(
+            "catchup started",
+            extra={
+                "event": "reindex.catchup.started",
+                "source": source_collection,
+                "target": target_collection,
+            },
+        )
+
+        copied = 0
+        offset = None
+        while True:
+            records, offset = self._client.scroll(
+                collection_name=source_collection,
+                limit=batch_size,
+                offset=offset,
+                with_payload=True,
+                with_vectors=True,
+            )
+            if records:
+                points = [
+                    PointStruct(id=r.id, vector=r.vector, payload=r.payload)
+                    for r in records
+                ]
+                self._client.upsert(
+                    collection_name=target_collection, points=points
+                )
+                copied += len(points)
+                logger.info(
+                    "catchup progress",
+                    extra={
+                        "event": "reindex.catchup.progress",
+                        "source": source_collection,
+                        "target": target_collection,
+                        "copied": copied,
+                    },
+                )
+            if offset is None:
+                break
+
+        logger.info(
+            "catchup completed",
+            extra={
+                "event": "reindex.catchup.completed",
+                "source": source_collection,
+                "target": target_collection,
+                "copied_count": copied,
+            },
+        )
+        return CatchupResult(
+            source_collection=source_collection,
+            target_collection=target_collection,
+            copied_count=copied,
+        )
+
 
 # ---------------------------------------------------------------------------
 # CLI
@@ -258,6 +340,24 @@ def _build_parser() -> argparse.ArgumentParser:
     drop.add_argument("name", type=_validate_physical_name)
 
     sub.add_parser("init-alias", help="既存物理コレクションに初期エイリアスを張る")
+
+    catchup = sub.add_parser(
+        "catchup",
+        help="再インデックス中に旧コレクションへ入った差分を新コレクションへ複製",
+    )
+    catchup.add_argument(
+        "--source",
+        required=True,
+        type=_validate_physical_name,
+        help="複製元の物理コレクション (例: artworks_v1)",
+    )
+    catchup.add_argument(
+        "--target",
+        required=True,
+        type=_validate_physical_name,
+        help="複製先の物理コレクション (例: artworks_v2)",
+    )
+    catchup.add_argument("--batch-size", type=int, default=100)
 
     return parser
 
@@ -469,11 +569,49 @@ def _cmd_init_alias(_: argparse.Namespace, settings: Settings) -> int:
     return 0
 
 
+def _cmd_catchup(args: argparse.Namespace, settings: Settings) -> int:
+    client, _, repo = build_repository(settings)
+    admin = AliasAdmin(client=client)
+    gate = ValidationGate(client=client)
+    orch = ReindexOrchestrator(
+        client=client,
+        repository=repo,
+        alias_admin=admin,
+        validation_gate=gate,
+        alias_name=settings.qdrant_alias,
+    )
+    try:
+        orch.catchup(
+            source_collection=args.source,
+            target_collection=args.target,
+            batch_size=args.batch_size,
+        )
+    except ValueError as exc:
+        logger.error(
+            "catchup refused invalid arguments",
+            extra={"event": "reindex.catchup.invalid", "error": str(exc)},
+        )
+        return 1
+    except Exception as exc:
+        logger.exception(
+            "catchup failed",
+            extra={
+                "event": "reindex.catchup.failed",
+                "source": args.source,
+                "target": args.target,
+                "error_type": type(exc).__name__,
+            },
+        )
+        return 1
+    return 0
+
+
 _DISPATCH: dict[str, Callable[[argparse.Namespace, Settings], int]] = {
     "run": _cmd_run,
     "rollback": _cmd_rollback,
     "drop-collection": _cmd_drop,
     "init-alias": _cmd_init_alias,
+    "catchup": _cmd_catchup,
 }
 
 
