@@ -163,7 +163,7 @@
   - impl: `README.md` の運用セクションから同ファイルへのリンクを追加
   - _Requirements: 9.4_
 
-- [ ] 10.3 PR テンプレートで Runbook 同期を強制
+- [x] 10.3 PR テンプレートで Runbook 同期を強制
   - impl: `.github/pull_request_template.md` を作成／更新し、「CLI 引数・design.md を変更した場合は `docs/runbooks/reindex.md` を更新した」チェック項目を追加
   - _Requirements: 9.6_
 
