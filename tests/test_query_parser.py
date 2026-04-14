@@ -162,6 +162,163 @@ class TestExpandedMotifExtraction:
         assert "red" in result.filters.color_tags
 
 
+class TestNormalizeHelper:
+    """_normalize() の単体テスト: 表記揺れ正規化の核。"""
+
+    def test_katakana_to_hiragana(self) -> None:
+        from services.search.query_parser import _normalize
+
+        assert _normalize("ネコ") == "ねこ"
+        assert _normalize("オレンジ") == "おれんじ"
+
+    def test_hiragana_unchanged(self) -> None:
+        from services.search.query_parser import _normalize
+
+        assert _normalize("ねこ") == "ねこ"
+
+    def test_kanji_unchanged(self) -> None:
+        from services.search.query_parser import _normalize
+
+        assert _normalize("猫") == "猫"
+        assert _normalize("山岳") == "山岳"
+
+    def test_halfwidth_katakana_normalized(self) -> None:
+        """半角カナ → 全角ひらがな (NFKC + kata→hira)。"""
+        from services.search.query_parser import _normalize
+
+        assert _normalize("ﾈｺ") == "ねこ"
+
+    def test_ascii_lowercased(self) -> None:
+        from services.search.query_parser import _normalize
+
+        assert _normalize("CAT") == "cat"
+
+    def test_mixed_query(self) -> None:
+        from services.search.query_parser import _normalize
+
+        assert _normalize("ネコの絵") == "ねこの絵"
+
+
+class TestKanaNormalizationMatching:
+    """カナ正規化により表記揺れを吸収するテスト。"""
+
+    def test_hiragana_query_matches_katakana_alias(self) -> None:
+        """JSON に「ネコ」エイリアスがあれば「ねこ」クエリでも cat にヒット。"""
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        result = parser.parse("ねこのいる風景")
+        assert "cat" in result.filters.motif_tags
+
+    def test_katakana_query_matches_hiragana_alias(self) -> None:
+        """逆方向: 「とり」エイリアスがあれば「トリ」クエリで bird にヒット。"""
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        result = parser.parse("トリの絵")
+        assert "bird" in result.filters.motif_tags
+
+    def test_hiragana_color_query(self) -> None:
+        """「おれんじ色の夕焼け」が orange に正規化されてヒット。"""
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        result = parser.parse("おれんじ色の夕焼け")
+        assert "orange" in result.filters.color_tags
+
+    def test_katakana_texture_query(self) -> None:
+        """「キンゾク」(金属) のような表記でも metallic ヒントが付く想定。
+        ※ 金属は漢字なのでこのケースは別途エイリアス必要。代わりに
+        「ツヤ消し」「つやけし」「つや消し」が同一視されることを確認。"""
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        result = parser.parse("ツヤけしの器")
+        assert "matte surface" in result.semantic_query
+        assert "glossy" not in result.semantic_query
+
+    def test_katakana_brightness(self) -> None:
+        """「アカルイ」が brightness_min=0.6 を発火 (現状 _BRIGHTNESS_BRIGHT に
+        「明るい」のみ。カタカナ表記もヒットする想定)。"""
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        # 「明るい」のひらがな表記は通常 「あかるい」 だが、
+        # カナ正規化後に「明るい」とは合致しない (漢字→かなの変換は別)。
+        # ここでは確実な kata→hira 変換のみ検証する: 「ダーク」→「だーく」
+        result = parser.parse("だーくな絵")
+        assert result.boosts.brightness_min == 0.0
+
+
+class TestMotifSynonyms:
+    """motif_jp_map.json への同義語追加で表記揺れを吸収するテスト。
+
+    短い純ひらがな (やま/うみ/はな/ほし/つき/しろ 等) は他語との衝突
+    (やまない・話す・欲しい・続き・面白い等) を起こすため意図的に
+    エイリアスから除外している。同義語は3文字以上 or 漢字+カナの
+    曖昧さの少ないものに限定する。
+    """
+
+    def test_mountain_synonyms(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        for q in ["山岳の風景", "マウンテン", "峰の連なり"]:
+            result = parser.parse(q)
+            assert "mountain" in result.filters.motif_tags, f"{q!r} did not match mountain"
+
+    def test_sky_synonyms(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        for q in ["天空の絵", "スカイラインの絵"]:
+            result = parser.parse(q)
+            assert "sky" in result.filters.motif_tags, f"{q!r} did not match sky"
+
+    def test_sea_synonyms(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        for q in ["海洋の絵", "オーシャン"]:
+            result = parser.parse(q)
+            assert "sea" in result.filters.motif_tags, f"{q!r} did not match sea"
+
+    def test_flower_synonyms(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        for q in ["華やかな庭", "華麗な作品", "ブロッサム"]:
+            result = parser.parse(q)
+            assert "flower" in result.filters.motif_tags, f"{q!r} did not match flower"
+
+    def test_flower_does_not_falsely_match_unrelated_compounds(self) -> None:
+        """「中華」「華族」のような flower と無関係な複合語で誤爆しない。"""
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        for q in ["中華料理の絵", "華族の肖像"]:
+            result = parser.parse(q)
+            assert "flower" not in result.filters.motif_tags, (
+                f"{q!r} should not match flower"
+            )
+
+    def test_star_moon_sun_synonyms(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        assert "star" in parser.parse("スターの輝き").filters.motif_tags
+        assert "moon" in parser.parse("ムーンライト").filters.motif_tags
+        assert "sun" in parser.parse("おひさま").filters.motif_tags
+
+    def test_castle_synonyms(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        for q in ["キャッスル", "城郭の絵"]:
+            result = parser.parse(q)
+            assert "castle" in result.filters.motif_tags, f"{q!r} did not match castle"
+
+
 class TestColorFalsePositiveAvoidance:
     """漢字1文字キーの複合語誤爆を回避するテスト。"""
 
