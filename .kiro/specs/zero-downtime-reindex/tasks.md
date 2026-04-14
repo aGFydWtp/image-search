@@ -87,7 +87,7 @@
 
 ## 6. ValidationGate
 
-- [ ] 6.1 検証ロジックを実装 (P)
+- [x] 6.1 検証ロジックを実装 (P)
   - tests: `tests/test_validation_gate.py` を新設
     - 件数比 >= 閾値で passed=True
     - 件数比 < 閾値で passed=False かつ詳細 `check.name='point_count_ratio'`
