@@ -144,7 +144,7 @@
 
 ## 9. Docker / 起動スクリプト整備
 
-- [ ] 9.1 docker-compose と README を alias 前提へ
+- [x] 9.1 docker-compose と README を alias 前提へ
   - impl: `docker-compose.yml` に `QDRANT_ALIAS` 等を受け渡し、初回起動用のワンショットジョブ `reindex init-alias` の利用を README に記載
   - impl: `reindex init-alias` サブコマンドを追加（`artworks_<version>` 未指定時は既定 `artworks_v1` を対象にエイリアス作成）
   - _Requirements: 1.2, 1.4_

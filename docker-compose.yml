@@ -25,13 +25,21 @@ services:
     environment:
       QDRANT_HOST: qdrant
       QDRANT_PORT: 6333
-      QDRANT_COLLECTION: artworks_v1
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-artworks_v1}
+      QDRANT_ALIAS: ${QDRANT_ALIAS:-artworks_current}
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
       LM_STUDIO_URL: http://host.docker.internal:1234
       EMBEDDING_SERVICE_URL: http://host.docker.internal:8100
       FIREBASE_CREDENTIALS_PATH: ${FIREBASE_CREDENTIALS_PATH:-/app/config/firebase-credentials.json}
       FIREBASE_STORAGE_BUCKET: ${FIREBASE_STORAGE_BUCKET:-}
       FIREBASE_STORAGE_PREFIX: ${FIREBASE_STORAGE_PREFIX:-}
       VECTOR_DIM: 1152
+      REINDEX_VALIDATION_RATIO: ${REINDEX_VALIDATION_RATIO:-0.9}
+      REINDEX_SAMPLE_QUERIES_PATH: ${REINDEX_SAMPLE_QUERIES_PATH:-config/reindex_samples.json}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SERVICE_NAME: ${SERVICE_NAME_INGESTION:-ingestion}
+      ENV_NAME: ${ENV_NAME:-local}
     volumes:
       - ./config:/app/config:ro
     extra_hosts:
@@ -49,13 +57,21 @@ services:
     environment:
       QDRANT_HOST: qdrant
       QDRANT_PORT: 6333
-      QDRANT_COLLECTION: artworks_v1
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-artworks_v1}
+      QDRANT_ALIAS: ${QDRANT_ALIAS:-artworks_current}
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
       EMBEDDING_SERVICE_URL: http://host.docker.internal:8100
       VECTOR_DIM: 1152
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SERVICE_NAME: ${SERVICE_NAME_SEARCH:-search}
+      ENV_NAME: ${ENV_NAME:-local}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      # /readyz (readiness): Cloud Run/GKE 互換のプローブ。
+      # エイリアス未定義 (init-alias 未実行) だと 503 を返す。
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/readyz').status == 200 else 1)"]
       interval: 10s
       timeout: 3s
       retries: 5

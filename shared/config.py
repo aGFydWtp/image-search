@@ -1,8 +1,8 @@
 """プロジェクト共通設定。環境変数から読み込む。"""
 
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import SecretStr
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -15,6 +15,18 @@ class Settings(BaseSettings):
     qdrant_collection: str = "artworks_v1"
     qdrant_alias: str = "artworks_current"
     qdrant_api_key: SecretStr | None = None
+
+    @field_validator("qdrant_api_key", mode="before")
+    @classmethod
+    def _empty_api_key_to_none(cls, value: Any) -> Any:
+        """docker-compose から空文字で渡された API キーを None に正規化する。
+
+        ``QDRANT_API_KEY: ${QDRANT_API_KEY:-}`` などの使い方で env が未設定のとき
+        空文字になり、QdrantClient に空キー認証を投げてしまうのを避ける。
+        """
+        if value == "":
+            return None
+        return value
 
     # LM Studio (Qwen2.5-VL)
     lm_studio_url: str = "http://localhost:1234"

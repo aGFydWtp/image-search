@@ -99,6 +99,12 @@ class TestReindexSettingsEnvOverride:
             assert "secret-key-123" not in repr(settings)
             assert "secret-key-123" not in str(settings)
 
+    def test_qdrant_api_key_empty_string_normalized_to_none(self) -> None:
+        """docker-compose の ${QDRANT_API_KEY:-} 起因の空文字を None 化する。"""
+        with patch.dict("os.environ", {"QDRANT_API_KEY": ""}, clear=True):
+            settings = Settings(_env_file=None)
+            assert settings.qdrant_api_key is None
+
     def test_reindex_validation_ratio_override(self) -> None:
         with patch.dict("os.environ", {"REINDEX_VALIDATION_RATIO": "0.75"}, clear=True):
             settings = Settings(_env_file=None)

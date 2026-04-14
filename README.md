@@ -72,6 +72,16 @@ cp .env.example .env
 docker compose up -d qdrant
 ```
 
+### 3.5. エイリアス初期化（Search Service 起動前に 1 回だけ）
+
+検索サービスは起動時にエイリアス（既定 `artworks_current`）の存在を検証し、未定義なら CRITICAL ログを出して起動に失敗する。初回セットアップ時は以下で既存コレクション（`QDRANT_COLLECTION` が指す `artworks_v1`）にエイリアスを張る。
+
+```bash
+docker compose run --rm ingestion python -m services.ingestion.reindex init-alias
+```
+
+ログに `event=reindex.alias.initialized` が出れば成功。既に存在する場合は `reindex.alias.init_skipped` で no-op。
+
 ### 4. SigLIP2埋め込みサービス起動
 
 ```bash
@@ -177,6 +187,30 @@ docker compose run --rm ingestion python -m services.ingestion.run
 ```
 
 Firebase Storageの `FIREBASE_STORAGE_PREFIX` で指定したフォルダから未処理画像を取得し、特徴抽出パイプラインを実行してQdrantに保存する。既にインデックス済みの画像はスキップされる。
+
+## 無停止再インデックス (Blue/Green)
+
+タグ体系刷新・埋め込みモデル更新などで全件再インデックスが必要な場合、検索サービスを停止せずに新しい物理コレクションへ切り替えられる。CLI は `services/ingestion/reindex.py` に集約されている。
+
+コマンド一覧と運用手順は `docs/runbooks/reindex.md` を参照。主要サブコマンド:
+
+```bash
+# 新物理コレクションを作成し切替まで実行
+docker compose run --rm ingestion python -m services.ingestion.reindex run \
+    --target-version v2 [--force-recreate] [--dry-run] [--skip-validation] [--sample-ratio 0.9]
+
+# 再インデックス期間中に旧コレクションへ入った差分を新コレクションへ複製
+docker compose run --rm ingestion python -m services.ingestion.reindex catchup \
+    --source artworks_v1 --target artworks_v2
+
+# エイリアスを旧バージョンへ戻す
+docker compose run --rm ingestion python -m services.ingestion.reindex rollback --to v1
+
+# 物理コレクションを削除 (現行ターゲットは拒否)
+docker compose run --rm ingestion python -m services.ingestion.reindex drop-collection artworks_v0
+```
+
+切替は Qdrant エイリアスをアトミックに更新するため、検索リクエストは停止せず新コレクションへルーティングされる。検証失敗時は切替を行わず、旧コレクションが稼働を継続する。
 
 
 ## プロジェクト構成
