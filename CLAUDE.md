@@ -43,3 +43,6 @@ Kiro-style Spec Driven Development implementation on AI-DLC (AI Development Life
 - Load entire `.kiro/steering/` as project memory
 - Default files: `product.md`, `tech.md`, `structure.md`
 - Custom files are supported (managed via `/kiro:steering-custom`)
+
+## Operational Runbooks
+- Reindex (Blue/Green, zero-downtime): [docs/runbooks/reindex.md](docs/runbooks/reindex.md) — 初期エイリアス作成 / run / dry-run / catchup / rollback / drop-collection / 健全性確認 / 障害判断の 8 シナリオを固定構造 (前提条件 / コマンド / 期待ログ / 成功判定 / 失敗時アクション / チェックリスト) で記載

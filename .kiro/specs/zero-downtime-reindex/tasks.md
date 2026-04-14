@@ -158,7 +158,7 @@
   - impl: 各シナリオ末尾に `### 成功判定チェックリスト` (チェックボックス形式) を入れる
   - _Requirements: 9.1, 9.2, 9.3, 9.5_
 
-- [ ] 10.2 エントリドキュメントから Runbook を発見可能にする
+- [x] 10.2 エントリドキュメントから Runbook を発見可能にする
   - impl: `CLAUDE.md` に `## Operational Runbooks` セクションを追加し `docs/runbooks/reindex.md` への相対リンクを記載
   - impl: `README.md` の運用セクションから同ファイルへのリンクを追加
   - _Requirements: 9.4_
