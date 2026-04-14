@@ -38,7 +38,7 @@
   - impl: `shared/qdrant/resolver.py`（新設）、例外型 `AliasNotFoundError` を定義
   - _Requirements: 1.1, 1.2, 1.3_
 
-- [ ] 3.2 `AliasAdmin` を実装 (P)
+- [x] 3.2 `AliasAdmin` を実装 (P)
   - tests: `tests/test_alias_admin.py` を新設
     - `swap(alias, new_target)` が `DeleteAlias`+`CreateAlias` を **単一** `update_collection_aliases` で発行
     - `new_target` 不在で `CollectionNotFoundError`
