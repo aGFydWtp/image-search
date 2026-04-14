@@ -30,7 +30,7 @@
 
 ## 3. CollectionResolver / AliasAdmin (shared/qdrant)
 
-- [ ] 3.1 `CollectionResolver` を実装 (P)
+- [x] 3.1 `CollectionResolver` を実装 (P)
   - tests: `tests/test_collection_resolver.py` を新設
     - `resolve()` が `get_collection_aliases` の戻り値から現在ターゲットを返す
     - エイリアス未定義時は `AliasNotFoundError` を送出
