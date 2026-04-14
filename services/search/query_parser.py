@@ -7,21 +7,39 @@ from pathlib import Path
 from shared.models.search import ParsedQuery, QueryBoosts, QueryFilters
 
 # 日本語色名 → 英語正規化形
+# 漢字1文字キーは「金属」「黄金」「銀河」「茶碗」等の複合語誤爆を避けるため
+# 「〜色」の明示形を使用する。
 _COLOR_MAP: dict[str, str] = {
     "赤": "red",
     "青": "blue",
     "緑": "green",
-    "黄": "yellow",
-    "金": "gold",
-    "銀": "silver",
+    "黄色": "yellow",
+    "金色": "gold",
+    "銀色": "silver",
     "白": "white",
     "黒": "black",
     "紫": "purple",
     "ピンク": "pink",
     "オレンジ": "orange",
-    "茶": "brown",
-    "灰": "gray",
+    "茶色": "brown",
+    "灰色": "gray",
     "水色": "teal",
+}
+
+# 質感・素材の日本語表現 → SigLIP2 への英語ヒント。
+# semantic_query に英訳的に追記して意味埋め込みに質感情報を載せる。
+_TEXTURE_EXPANSIONS: dict[str, str] = {
+    "つや消し": "matte surface",
+    "ツヤ消し": "matte surface",
+    "金属": "metallic surface",
+    "光沢": "glossy shiny surface",
+    "つや": "glossy",
+    "ツヤ": "glossy",
+    "マット": "matte surface",
+    "つるつる": "smooth glossy",
+    "ざらざら": "rough textured",
+    "なめらか": "smooth",
+    "粗い": "rough textured",
 }
 
 
@@ -49,7 +67,7 @@ def _load_motif_map() -> list[tuple[str, str]]:
     return pairs
 
 # 明るさ関連の日本語表現 → brightness_min値
-_BRIGHTNESS_BRIGHT: list[str] = ["明るい", "明るく", "光", "輝", "鮮やか"]
+_BRIGHTNESS_BRIGHT: list[str] = ["明るい", "明るく", "鮮やか", "光り輝く", "きらきら", "キラキラ", "輝く", "眩しい", "まぶしい", "煌めく", "煌めき", "煌びやか"]
 _BRIGHTNESS_DARK: list[str] = ["暗い", "暗く", "暗め", "ダーク", "闇"]
 
 
@@ -108,7 +126,20 @@ class QueryParser:
     def _build_semantic_query(self, query: str) -> str:
         """クエリ全体をsemantic_queryとして返す。
 
-        v1ではクエリ全体をそのまま使用する。SigLIP2が多言語対応のため、
-        日本語クエリをそのままテキスト埋め込みに渡す。
+        SigLIP2が多言語対応のため日本語クエリをそのまま埋め込みに渡すが、
+        質感・素材語が含まれていれば英語ヒントを末尾に追加して意味的な
+        手がかりを補強する。
         """
-        return query
+        seen: set[str] = set()
+        expansions: list[str] = []
+        # 長いキーから順にマッチさせ、ヒット部分を作業文字列から除去する。
+        # これにより「つや消し」が「つや」に再マッチして glossy も付くのを防ぐ。
+        remaining = query
+        for jp, en in sorted(_TEXTURE_EXPANSIONS.items(), key=lambda x: -len(x[0])):
+            if jp in remaining and en not in seen:
+                expansions.append(en)
+                seen.add(en)
+                remaining = remaining.replace(jp, "")
+        if not expansions:
+            return query
+        return f"{query} ({', '.join(expansions)})"

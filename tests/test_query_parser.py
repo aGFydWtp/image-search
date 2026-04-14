@@ -20,7 +20,7 @@ class TestColorExtraction:
         from services.search.query_parser import QueryParser
 
         parser = QueryParser()
-        result = parser.parse("緑と金が入っている作品")
+        result = parser.parse("緑と金色が入っている作品")
         assert "green" in result.filters.color_tags
         assert "gold" in result.filters.color_tags
 
@@ -162,6 +162,58 @@ class TestExpandedMotifExtraction:
         assert "red" in result.filters.color_tags
 
 
+class TestColorFalsePositiveAvoidance:
+    """漢字1文字キーの複合語誤爆を回避するテスト。"""
+
+    def test_metallic_does_not_trigger_gold(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        result = parser.parse("金属の光沢があるような")
+        assert "gold" not in result.filters.color_tags
+
+    def test_silver_compound_does_not_trigger_silver(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        result = parser.parse("銀河の絵")
+        assert "silver" not in result.filters.color_tags
+
+    def test_explicit_gold_color_still_works(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        result = parser.parse("金色の仏像")
+        assert "gold" in result.filters.color_tags
+
+
+class TestTextureExpansion:
+    """質感キーワードを semantic_query に英訳ヒントとして追記するテスト。"""
+
+    def test_metallic_glossy_expansion(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        result = parser.parse("金属の光沢があるような")
+        assert "metallic surface" in result.semantic_query
+        assert "glossy shiny surface" in result.semantic_query
+
+    def test_no_texture_no_expansion(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        result = parser.parse("青い空")
+        assert result.semantic_query == "青い空"
+
+    def test_matte_does_not_also_trigger_glossy(self) -> None:
+        from services.search.query_parser import QueryParser
+
+        parser = QueryParser()
+        result = parser.parse("つや消しの器")
+        assert "matte surface" in result.semantic_query
+        assert "glossy" not in result.semantic_query
+
+
 class TestBrightnessBoost:
     """明るさ関連表現 → brightness boost変換テスト。"""
 
@@ -203,7 +255,7 @@ class TestSemanticQuery:
         from services.search.query_parser import QueryParser
 
         parser = QueryParser()
-        result = parser.parse("やさしい感じで、緑と金が入っていて、空っぽい作品")
+        result = parser.parse("やさしい感じで、緑と金色が入っていて、空っぽい作品")
         assert "green" in result.filters.color_tags
         assert "gold" in result.filters.color_tags
         assert "sky" in result.filters.motif_tags
