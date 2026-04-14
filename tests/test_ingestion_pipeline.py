@@ -47,6 +47,7 @@ def _make_normalized_tags() -> NormalizedTags:
         motif_tags=["sky", "sea"],
         style_tags=["impressionism"],
         subject_tags=["landscape"],
+        freeform_keywords=[],
         color_tags=["orange", "blue"],
         taxonomy_version="v1",
     )

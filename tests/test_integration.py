@@ -82,7 +82,7 @@ class TestIngestionServiceIntegration:
         assert "calm" in payload.mood_tags  # TaxonomyMapper が "peaceful" → "calm" に正規化
         assert "field" in payload.motif_tags
         assert "sky" in payload.motif_tags
-        assert payload.taxonomy_version == "v1"
+        assert payload.taxonomy_version == "v2"
 
         # ColorExtractor の実結果が反映
         assert len(payload.color_tags) > 0
@@ -196,8 +196,10 @@ class TestSearchServiceIntegration:
         assert "sea" in pq["filters"]["motif_tags"]
 
         # Qdrant にフィルタが渡された
+        # motif_tags はシノニム展開 (海 → sea, ocean 等) で順序・件数が
+        # 広がる可能性があるため、core ラベルの包含のみ検証する
         call_kwargs = qdrant.search.call_args.kwargs
-        assert call_kwargs["filters"].motif_tags == ["sky", "sea"]
+        assert {"sky", "sea"}.issubset(set(call_kwargs["filters"].motif_tags))
         assert call_kwargs["filters"].color_tags == ["blue"]
         assert call_kwargs["limit"] == 10
 
@@ -400,6 +402,7 @@ class TestQdrantRepositoryIntegration:
                 motif_tags=["sky"],
                 style_tags=[],
                 subject_tags=["landscape"],
+                freeform_keywords=[],
                 color_tags=["blue"],
                 palette_hex=["#0000FF"],
                 brightness_score=0.7,
@@ -442,6 +445,7 @@ class TestQdrantRepositoryIntegration:
                 motif_tags=["sky"],
                 style_tags=[],
                 subject_tags=[],
+                freeform_keywords=[],
                 color_tags=["blue"],
                 palette_hex=["#0000FF"],
                 brightness_score=0.8,

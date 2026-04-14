@@ -105,7 +105,7 @@ class TestTaxonomyMapperEdgeCases:
 
         assert result.motif_tags == []
         assert result.mood_tags == []
-        assert result.taxonomy_version == "v1"
+        assert result.taxonomy_version == "v2"
 
     def test_all_stopwords_removed(self) -> None:
         from shared.taxonomy.mapper import TaxonomyMapper
