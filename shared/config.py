@@ -1,5 +1,8 @@
 """プロジェクト共通設定。環境変数から読み込む。"""
 
+from typing import Literal
+
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 
 
@@ -10,6 +13,8 @@ class Settings(BaseSettings):
     qdrant_host: str = "localhost"
     qdrant_port: int = 6333
     qdrant_collection: str = "artworks_v1"
+    qdrant_alias: str = "artworks_current"
+    qdrant_api_key: SecretStr | None = None
 
     # LM Studio (Qwen2.5-VL)
     lm_studio_url: str = "http://localhost:1234"
@@ -24,5 +29,17 @@ class Settings(BaseSettings):
 
     # Vector dimensions
     vector_dim: int = 1152
+
+    # Reindex / ValidationGate
+    reindex_validation_ratio: float = 0.9
+    reindex_sample_queries_path: str = "config/reindex_samples.json"
+
+    # Logging
+    log_format: Literal["json", "text"] = "json"
+    log_level: Literal[
+        "DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "CRITICAL"
+    ] = "INFO"
+    service_name: str = "image-search"
+    env_name: str = "local"
 
     model_config = {"env_file": ".env", "env_prefix": ""}
