@@ -29,7 +29,8 @@ class TestBatchRunnerInit:
 
     def test_creates_with_settings(self) -> None:
         """Settings からすべての依存を組み立てられる。"""
-        with patch("services.ingestion.run.Settings") as mock_settings_cls:
+        with patch("services.ingestion.run.Settings") as mock_settings_cls, \
+             patch("services.ingestion.run.configure_logging"):
             mock_settings = MagicMock()
             mock_settings.firebase_credentials_path = "/tmp/cred.json"
             mock_settings.firebase_storage_bucket = "test-bucket"
@@ -50,6 +51,28 @@ class TestBatchRunnerInit:
                 runner = BatchRunner()
 
             assert runner._prefix == "generated_arts/"
+
+    def test_configures_structured_logging_once_on_init(self) -> None:
+        """BatchRunner 初期化時に configure_logging が 1 度だけ呼ばれる。"""
+        with patch("services.ingestion.run.Settings") as mock_settings_cls, \
+             patch("services.ingestion.run.configure_logging") as mock_configure:
+            mock_settings = MagicMock()
+            mock_settings.firebase_storage_prefix = "generated_arts/"
+            mock_settings.vector_dim = 1152
+            mock_settings.qdrant_host = "localhost"
+            mock_settings.qdrant_port = 6333
+            mock_settings.qdrant_alias = "artworks_current"
+            mock_settings.qdrant_collection = "artworks_v1"
+            mock_settings_cls.return_value = mock_settings
+
+            with patch("services.ingestion.run.FirebaseStorageClient"), \
+                 patch("services.ingestion.run.QdrantClient"), \
+                 patch("services.ingestion.run.QdrantRepository"), \
+                 patch("services.ingestion.run.VLMClient"), \
+                 patch("services.ingestion.run.EmbeddingClient"):
+                BatchRunner()
+
+            mock_configure.assert_called_once_with(mock_settings)
 
 
 class TestBatchRunnerExecute:

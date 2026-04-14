@@ -36,7 +36,9 @@ class TestLifespanAliasExistenceCheck:
         with patch(
             "shared.qdrant.factory.build_repository",
             return_value=(client_mock, resolver_mock, repo_mock),
-        ):
+        ), patch(
+            "shared.logging.configure_logging"
+        ):  # caplog と衝突させないため no-op 化
             from services.search.app import app
 
             caplog.set_level("CRITICAL")

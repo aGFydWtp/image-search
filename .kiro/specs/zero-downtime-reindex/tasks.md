@@ -23,7 +23,7 @@
   - impl: `shared/logging/structured.py`（新設）に `JsonFormatter` と `configure_logging(settings)` を実装
   - _Requirements: 7.3, 7.4, 7.5, 7.6, 8.2_
 
-- [ ] 2.2 各サービスエントリポイントでロガー初期化
+- [x] 2.2 各サービスエントリポイントでロガー初期化
   - tests: サービス起動時に `configure_logging` が 1 度だけ呼ばれることを `tests/test_search_app.py` / `tests/test_batch_runner.py` に追加
   - impl: `services/search/app.py` lifespan 冒頭、`services/ingestion/run.py` と新規 `reindex.py` の先頭で `configure_logging(settings)` を呼ぶ
   - _Requirements: 7.3, 7.6_

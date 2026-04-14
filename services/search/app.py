@@ -38,10 +38,12 @@ async def lifespan(app: FastAPI):
     from shared.clients.embedding import EmbeddingClient
     from shared.clients.vlm import VLMClient
     from shared.config import Settings
+    from shared.logging import configure_logging
     from shared.qdrant import factory
     from shared.taxonomy.mapper import TaxonomyMapper
 
     settings = Settings()
+    configure_logging(settings)
 
     # Qdrant: ファクトリで client + resolver + repository をまとめて構築
     _, _resolver, _qdrant_repo = factory.build_repository(settings)

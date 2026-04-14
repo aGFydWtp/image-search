@@ -10,6 +10,7 @@ from qdrant_client import QdrantClient
 from shared.clients.embedding import EmbeddingClient
 from shared.clients.vlm import VLMClient
 from shared.config import Settings
+from shared.logging import configure_logging
 from shared.qdrant.repository import QdrantRepository
 from shared.qdrant.resolver import CollectionResolver
 from shared.taxonomy.mapper import TaxonomyMapper
@@ -20,7 +21,6 @@ from services.ingestion.firebase_storage import FirebaseStorageClient
 from services.ingestion.image_preprocessor import ImagePreprocessor
 from services.ingestion.pipeline import IngestionService
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -29,6 +29,7 @@ class BatchRunner:
 
     def __init__(self) -> None:
         settings = Settings()
+        configure_logging(settings)
         self._prefix = settings.firebase_storage_prefix
 
         self._firebase = FirebaseStorageClient(
