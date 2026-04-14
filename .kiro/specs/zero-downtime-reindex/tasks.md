@@ -169,7 +169,7 @@
 
 ## 11. 統合テスト（Qdrant 実コンテナ）
 
-- [ ] 11.1 Blue/Green 切替の E2E
+- [x] 11.1 Blue/Green 切替の E2E
   - tests: `tests/test_reindex_e2e.py` を新設
     - コレクション A 作成 → alias → A に upsert → 検索
     - コレクション B 作成 → B に upsert → validate pass → swap
